@@ -23,6 +23,8 @@ export default function HomePage() {
     const [error, setError] = useState<string | null>(null);
     const [intervalMs] = useState(15000);
     const [filter, setFilter] = useState('');
+    const [prefixFilter, setPrefixFilter] = useState('');
+    const [suffixFilter, setSuffixFilter] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
 
@@ -38,7 +40,12 @@ export default function HomePage() {
         setLoading(false);
     }, []);
 
-    const filteredQueues = queues.filter((q) => q.name.includes(filter));
+    const filteredQueues = queues.filter((q) =>
+        q.name.includes(filter) &&
+        (prefixFilter ? q.name.startsWith(prefixFilter) : true) &&
+        (suffixFilter ? q.name.endsWith(suffixFilter) : true)
+    );
+
     const paginatedQueues = filteredQueues.slice(
         (currentPage - 1) * itemsPerPage,
         currentPage * itemsPerPage
@@ -73,6 +80,20 @@ export default function HomePage() {
                         onChange={(e) => setFilter(e.target.value)}
                         className="px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
                     />
+                    <input
+                        type="text"
+                        placeholder="Prefijo..."
+                        value={prefixFilter}
+                        onChange={(e) => setPrefixFilter(e.target.value)}
+                        className="px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+                    />
+                    <input
+                        type="text"
+                        placeholder="Sufijo..."
+                        value={suffixFilter}
+                        onChange={(e) => setSuffixFilter(e.target.value)}
+                        className="px-3 py-2 rounded bg-gray-800 text-white border border-gray-700"
+                    />
                 </div>
 
                 {loading ? (
@@ -85,10 +106,8 @@ export default function HomePage() {
                     <p className="text-red-400">{error}</p>
                 ) : (
                     <div className="space-y-2">
-                        <div
-                            className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_0.7fr] bg-gray-900 px-2 py-2 rounded-lg shadow-sm text-sm border border-white/10"
-                        >
-                            <div className="text-center py-2 border-r border-white/10">Nombre</div>
+                        <div className="bg-gray-900 rounded-lg grid grid-cols-[3fr_1fr_1fr_1fr_1fr_auto] text-sm text-gray-400 border border-white/10">
+                            <div className="pl-2 text-center py-2 border-r border-white/10">Nombre</div>
                             <div className="text-center py-2 border-r border-white/10">En cola</div>
                             <div className="text-center py-2 border-r border-white/10">Consumidores</div>
                             <div className="text-center py-2 border-r border-white/10">Encolados</div>
