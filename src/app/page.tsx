@@ -1,11 +1,13 @@
+/* Archivo: src/app/page.tsx */
+
 'use client';
 
-import {useEffect, useState} from 'react';
-import {Skeleton} from '@/components/ui/Skeleton';
-import {Button} from '@/components/ui/Button';
-import {Send, Trash2, XCircle, LogOut} from 'lucide-react';
-import {Tooltip} from '@/components/ui/Tooltip';
-import {TooltipProvider} from "@radix-ui/react-tooltip";
+import { useEffect, useState } from 'react';
+import { Skeleton } from '@/components/ui/Skeleton';
+import { Button } from '@/components/ui/Button';
+import { Send, Trash2, XCircle, LogOut } from 'lucide-react';
+import { TooltipProvider } from '@radix-ui/react-tooltip';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 interface QueueInfo {
     name: string;
@@ -24,9 +26,8 @@ export default function HomePage() {
     const [currentPage, setCurrentPage] = useState(1);
     const itemsPerPage = 15;
 
-    // Mock data
     useEffect(() => {
-        const mockData: QueueInfo[] = Array.from({length: 20}).map((_, i) => ({
+        const mockData: QueueInfo[] = Array.from({ length: 20 }).map((_, i) => ({
             name: `queue-${i + 1}`,
             consumerCount: Math.floor(Math.random() * 5),
             queueSize: Math.floor(Math.random() * 100),
@@ -59,7 +60,7 @@ export default function HomePage() {
                             className="bg-red-600 hover:bg-red-700 text-white"
                             onClick={() => alert('Cerrar sesión')}
                         >
-                            <LogOut className="w-4 h-4 inline mr-1"/> Salir
+                            <LogOut className="w-4 h-4 inline mr-1" /> Salir
                         </Button>
                     </div>
                 </div>
@@ -76,40 +77,40 @@ export default function HomePage() {
 
                 {loading ? (
                     <div className="space-y-4">
-                        {Array.from({length: 3}).map((_, i) => (
-                            <Skeleton key={i} className="h-16 w-full rounded bg-gray-800"/>
+                        {Array.from({ length: 3 }).map((_, i) => (
+                            <Skeleton key={i} className="h-16 w-full rounded bg-gray-800" />
                         ))}
                     </div>
                 ) : error ? (
                     <p className="text-red-400">{error}</p>
                 ) : (
                     <div className="space-y-2">
-                        <div className="grid grid-cols-6 gap-4 px-4 text-sm text-gray-400">
-                            <div>Nombre</div>
-                            <div>En cola</div>
-                            <div>Consumidores</div>
-                            <div>Encolados</div>
-                            <div>Desencolados</div>
-                            <div>Acciones</div>
+                        <div className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_auto] gap-0 text-sm text-gray-400 border-b border-white/10 pb-1">
+                            <div className="pl-2 text-center border-r border-white/10">Nombre</div>
+                            <div className="text-center border-r border-white/10">En cola</div>
+                            <div className="text-center border-r border-white/10">Consumidores</div>
+                            <div className="text-center border-r border-white/10">Encolados</div>
+                            <div className="text-center border-r border-white/10">Desencolados</div>
+                            <div className="text-center">Acciones</div>
                         </div>
 
                         {paginatedQueues.map((queue) => (
                             <div
                                 key={queue.name}
-                                className="grid grid-cols-6 gap-4 bg-gray-800 p-2 rounded-lg shadow-sm text-sm items-center"
+                                className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_auto] gap-0 bg-gray-800 px-2 py-2 rounded-lg shadow-sm text-sm items-center"
                             >
-                                <div>{queue.name}</div>
-                                <div>{queue.queueSize}</div>
-                                <div>{queue.consumerCount}</div>
-                                <div>{queue.enqueueCount}</div>
-                                <div>{queue.dequeueCount}</div>
-                                <div className="flex gap-2">
+                                <div className="truncate pl-2 border-r border-white/10">{queue.name}</div>
+                                <div className="text-center border-r border-white/10">{queue.queueSize}</div>
+                                <div className="text-center border-r border-white/10">{queue.consumerCount}</div>
+                                <div className="text-center border-r border-white/10">{queue.enqueueCount}</div>
+                                <div className="text-center border-r border-white/10">{queue.dequeueCount}</div>
+                                <div className="flex justify-center gap-2">
                                     <Tooltip content="Enviar mensaje">
                                         <Button
                                             className="bg-green-600 hover:bg-green-700 text-white"
                                             onClick={() => alert(`Enviar mensaje a ${queue.name}`)}
                                         >
-                                            <Send className="w-4 h-4"/>
+                                            <Send className="w-4 h-4" />
                                         </Button>
                                     </Tooltip>
 
@@ -118,7 +119,7 @@ export default function HomePage() {
                                             className="bg-yellow-600 hover:bg-yellow-700 text-white"
                                             onClick={() => alert(`Purgar cola ${queue.name}`)}
                                         >
-                                            <XCircle className="w-4 h-4"/>
+                                            <XCircle className="w-4 h-4" />
                                         </Button>
                                     </Tooltip>
 
@@ -127,7 +128,7 @@ export default function HomePage() {
                                             className="bg-red-600 hover:bg-red-700 text-white"
                                             onClick={() => alert(`Eliminar cola ${queue.name}`)}
                                         >
-                                            <Trash2 className="w-4 h-4"/>
+                                            <Trash2 className="w-4 h-4" />
                                         </Button>
                                     </Tooltip>
                                 </div>
