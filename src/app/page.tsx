@@ -85,19 +85,21 @@ export default function HomePage() {
                     <p className="text-red-400">{error}</p>
                 ) : (
                     <div className="space-y-2">
-                        <div className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_auto] gap-0 text-sm text-gray-400 border-b border-white/10 pb-1">
-                            <div className="pl-2 text-center border-r border-white/10">Nombre</div>
-                            <div className="text-center border-r border-white/10">En cola</div>
-                            <div className="text-center border-r border-white/10">Consumidores</div>
-                            <div className="text-center border-r border-white/10">Encolados</div>
-                            <div className="text-center border-r border-white/10">Desencolados</div>
-                            <div className="text-center">Acciones</div>
+                        <div
+                            className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_0.7fr] bg-gray-900 px-2 py-2 rounded-lg shadow-sm text-sm border border-white/10"
+                        >
+                            <div className="text-center py-2 border-r border-white/10">Nombre</div>
+                            <div className="text-center py-2 border-r border-white/10">En cola</div>
+                            <div className="text-center py-2 border-r border-white/10">Consumidores</div>
+                            <div className="text-center py-2 border-r border-white/10">Encolados</div>
+                            <div className="text-center py-2 border-r border-white/10">Desencolados</div>
+                            <div className="text-center py-2">Acciones</div>
                         </div>
 
                         {paginatedQueues.map((queue) => (
                             <div
                                 key={queue.name}
-                                className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_auto] gap-0 bg-gray-800 px-2 py-2 rounded-lg shadow-sm text-sm items-center"
+                                className="grid grid-cols-[3fr_1fr_1fr_1fr_1fr_auto] bg-gray-800 px-2 py-2 rounded-lg shadow-sm text-sm items-center border border-white/10"
                             >
                                 <div className="truncate pl-2 border-r border-white/10">{queue.name}</div>
                                 <div className="text-center border-r border-white/10">{queue.queueSize}</div>
