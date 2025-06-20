@@ -1,7 +1,7 @@
 import { Message } from '@/types/message';
-import { Dialog, DialogContent, DialogHeader, DialogTitle} from '@/components/ui/Dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import { Button } from '@/components/ui/Button';
-import { Copy, Download } from 'lucide-react';
+import { X, Eye, Copy, Calendar, Hash } from 'lucide-react';
 
 interface MessageViewerProps {
   message: Message | null;
@@ -10,96 +10,112 @@ interface MessageViewerProps {
 }
 
 export function MessageViewer({ message, isOpen, onClose }: MessageViewerProps) {
-  if (!message) return null;
+  const copyToClipboard = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('Copiado al portapapeles');
+  };
 
-  const copyToClipboard = async (text: string) => {
+  const formatJson = (text: string) => {
     try {
-      await navigator.clipboard.writeText(text);
-      // Aquí podrías agregar una notificación de éxito
-    } catch (err) {
-      console.error('Error al copiar al portapapeles:', err);
+      const parsed = JSON.parse(text);
+      return JSON.stringify(parsed, null, 2);
+    } catch {
+      return text;
     }
   };
 
-  const downloadMessage = () => {
-    const blob = new Blob([message.body], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `message-${message.id}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
-
-  const formatTimestamp = (timestamp: string) => {
-    return new Date(timestamp).toLocaleString('es-ES', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-    });
-  };
+  if (!message) return null;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+    <Dialog isOpen={isOpen} onClose={onClose}>
+      <DialogContent className="max-w-4xl bg-slate-800 border border-slate-700 max-h-[90vh] overflow-hidden">
         <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>Detalles del Mensaje</span>
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => copyToClipboard(message.body)}
-              >
-                <Copy className="h-4 w-4 mr-1" />
-                Copiar
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={downloadMessage}
-              >
-                <Download className="h-4 w-4 mr-1" />
-                Descargar
-              </Button>
-            </div>
+          <DialogTitle className="text-white flex items-center gap-2">
+            <Eye className="h-5 w-5 text-blue-400" />
+            Detalles del Mensaje
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex-1 overflow-hidden flex flex-col space-y-4">
-          <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                ID del Mensaje
-              </label>
-              <div className="text-sm text-gray-900 font-mono bg-white p-2 rounded border">
-                {message.id}
+        <div className="flex flex-col h-[70vh] p-6 gap-6">
+          {/* Información del mensaje */}
+          <div className="grid grid-cols-2 gap-4 flex-shrink-0">
+            <div className="bg-slate-700 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Hash className="h-4 w-4 text-blue-400" />
+                <span className="text-sm font-medium text-slate-300">ID del Mensaje</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-white font-mono break-all">{message.id}</span>
+                <Button
+                  onClick={() => copyToClipboard(message.id)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-400 hover:text-white"
+                >
+                  <Copy className="h-3 w-3" />
+                </Button>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Timestamp
-              </label>
-              <div className="text-sm text-gray-900 bg-white p-2 rounded border">
-                {formatTimestamp(message.timestamp)}
+
+            <div className="bg-slate-700 p-4 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <Calendar className="h-4 w-4 text-green-400" />
+                <span className="text-sm font-medium text-slate-300">Fecha y Hora</span>
               </div>
+              <span className="text-sm text-white">{new Date(message.timestamp).toLocaleString()}</span>
             </div>
           </div>
 
-          <div className="flex-1 overflow-hidden flex flex-col">
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Contenido del Mensaje
-            </label>
-            <div className="flex-1 overflow-auto bg-gray-50 p-4 rounded-lg border">
-              <pre className="text-sm text-gray-900 whitespace-pre-wrap font-mono">
-                {message.body}
+          {/* Cuerpo del mensaje */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-lg font-medium text-slate-300">Cuerpo del Mensaje</h3>
+              <Button
+                onClick={() => copyToClipboard(message.body)}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Copy className="h-4 w-4 mr-2" />
+                Copiar
+              </Button>
+            </div>
+            <div className="flex-1 bg-slate-700 p-4 rounded-lg overflow-auto">
+              <pre className="text-sm text-white font-mono whitespace-pre-wrap break-words">
+                {formatJson(message.body)}
               </pre>
             </div>
+          </div>
+
+          {/* Headers */}
+          {message.headers && Object.keys(message.headers).length > 0 && (
+            <div className="flex-shrink-0">
+              <h3 className="text-lg font-medium text-slate-300 mb-3">Headers</h3>
+              <div className="bg-slate-700 p-4 rounded-lg max-h-40 overflow-y-auto">
+                <div className="space-y-2">
+                  {Object.entries(message.headers).map(([key, value]) => (
+                    <div key={key} className="flex items-start gap-3">
+                      <span className="text-blue-400 font-medium text-sm min-w-0 flex-shrink-0">
+                        {key}:
+                      </span>
+                      <span className="text-white text-sm font-mono break-all">
+                        {value?.toString() || 'null'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Botones */}
+          <div className="flex-shrink-0 flex justify-end pt-4 border-t border-slate-700">
+            <Button
+              onClick={onClose}
+              className="bg-slate-700 hover:bg-slate-600 text-white"
+            >
+              <X className="h-4 w-4 mr-2" />
+              Cerrar
+            </Button>
           </div>
         </div>
       </DialogContent>

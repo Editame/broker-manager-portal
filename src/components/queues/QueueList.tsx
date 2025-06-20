@@ -1,17 +1,17 @@
 import { useMemo } from 'react';
 import { QueueInfo, QueueFilters } from '@/types/queue';
-import { QueueCard } from './QueueCard';
-import { Pagination } from '@/components/common/Pagination';
-import { usePagination } from '@/hooks/usePagination';
+import { QueueRow } from './QueueRow';
+import { Search } from 'lucide-react';
 
 interface QueueListProps {
   queues: QueueInfo[];
   filters: QueueFilters;
   selectedQueue: QueueInfo | null;
   onSelectQueue: (queue: QueueInfo) => void;
-  onViewMessages: (queue: QueueInfo) => void;
+  onSendMessage?: (queue: QueueInfo) => void;
   onPurgeQueue?: (queue: QueueInfo) => void;
   onDeleteQueue?: (queue: QueueInfo) => void;
+  onPauseQueue?: (queue: QueueInfo) => void;
 }
 
 export function QueueList({
@@ -19,9 +19,10 @@ export function QueueList({
   filters,
   selectedQueue,
   onSelectQueue,
-  onViewMessages,
+  onSendMessage,
   onPurgeQueue,
   onDeleteQueue,
+  onPauseQueue,
 }: QueueListProps) {
   const filteredQueues = useMemo(() => {
     return queues.filter((queue) => {
@@ -38,23 +39,15 @@ export function QueueList({
     });
   }, [queues, filters]);
 
-  const {
-    paginatedItems: paginatedQueues,
-    paginationState,
-    totalPages,
-    goToPage,
-    hasNextPage,
-    hasPrevPage,
-  } = usePagination(filteredQueues, 15);
-
   if (filteredQueues.length === 0) {
     return (
-      <div className="text-center py-12">
-        <div className="text-gray-500 text-lg mb-2">
-          {queues.length === 0 ? 'No hay colas disponibles' : 'No se encontraron colas que coincidan con los filtros'}
+      <div className="flex flex-col items-center justify-center h-full text-center p-8">
+        <Search className="h-12 w-12 text-slate-500 mb-4" />
+        <div className="text-slate-400 text-lg mb-2">
+          {queues.length === 0 ? 'No hay colas disponibles' : 'No se encontraron colas'}
         </div>
         {queues.length > 0 && (
-          <div className="text-gray-400 text-sm">
+          <div className="text-slate-500 text-sm">
             Intenta ajustar los filtros para ver más resultados
           </div>
         )}
@@ -63,41 +56,42 @@ export function QueueList({
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-gray-900">
-          Colas del Broker ({filteredQueues.length})
-        </h2>
-        <div className="text-sm text-gray-500">
-          {filteredQueues.length !== queues.length && (
-            <span>Mostrando {filteredQueues.length} de {queues.length} colas</span>
-          )}
+    <div className="flex flex-col h-full">
+      {/* Header */}
+      <div className="p-3 border-b border-slate-700 bg-slate-800">
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold text-white">
+            Colas del Broker
+          </h2>
+          <div className="text-sm text-slate-400">
+            {filteredQueues.length} de {queues.length} colas
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {paginatedQueues.map((queue) => (
-          <QueueCard
+      {/* Table Header */}
+      <div className="grid grid-cols-12 gap-2 px-3 py-2 bg-slate-700 text-xs font-medium text-slate-300 uppercase tracking-wider border-b border-slate-600">
+        <div className="col-span-4">Nombre</div>
+        <div className="col-span-2 text-center">Mensajes</div>
+        <div className="col-span-2 text-center">Consumidores</div>
+        <div className="col-span-4 text-right pr-2">Acciones</div>
+      </div>
+
+      {/* Queue List - Con scroll */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredQueues.map((queue) => (
+          <QueueRow
             key={queue.name}
             queue={queue}
             isSelected={selectedQueue?.name === queue.name}
             onSelect={onSelectQueue}
-            onViewMessages={onViewMessages}
+            onSendMessage={onSendMessage}
             onPurgeQueue={onPurgeQueue}
             onDeleteQueue={onDeleteQueue}
+            onPauseQueue={onPauseQueue}
           />
         ))}
       </div>
-
-      {totalPages > 1 && (
-        <Pagination
-          paginationState={paginationState}
-          totalPages={totalPages}
-          onPageChange={goToPage}
-          hasNextPage={hasNextPage}
-          hasPrevPage={hasPrevPage}
-        />
-      )}
     </div>
   );
 }

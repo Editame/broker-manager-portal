@@ -1,5 +1,6 @@
 import { QueueInfo } from '@/types/queue';
-import {BrokerQueuesResponse, Message} from './types';
+import { Message } from '@/types/message';
+import { BrokerQueuesResponse } from './types';
 import { ENDPOINTS } from './endpoints';
 
 export async function fetchQueues(): Promise<QueueInfo[]> {
@@ -18,13 +19,52 @@ export async function fetchQueues(): Promise<QueueInfo[]> {
 
 export async function fetchMessages(queueName: string): Promise<Message[]> {
     try {
-        const res = await fetch(ENDPOINTS.QUEUE_MESSAGES(queueName));
+        console.log('Fetching messages for queue:', queueName);
+        const url = ENDPOINTS.QUEUE_MESSAGES(queueName);
+        console.log('URL:', url);
+        
+        const res = await fetch(url);
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
-        return res.json();
+        const data = await res.json();
+        console.log('Messages data:', data);
+        return data;
     } catch (error) {
         console.error('Error fetching messages:', error);
         throw new Error('No se pudieron obtener los mensajes de la cola');
+    }
+}
+
+export interface SendMessageRequest {
+    body: string;
+    headers?: Record<string, any>;
+    type?: string;
+    priority?: number;
+    timeToLive?: number;
+}
+
+export async function sendMessage(queueName: string, messageData: SendMessageRequest): Promise<string> {
+    try {
+        console.log('Sending message to queue:', queueName, messageData);
+        
+        const res = await fetch(ENDPOINTS.QUEUE_MESSAGES(queueName), {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(messageData),
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        const response = await res.text();
+        console.log('Message sent successfully:', response);
+        return response;
+    } catch (error) {
+        console.error('Error sending message:', error);
+        throw new Error('No se pudo enviar el mensaje a la cola');
     }
 }

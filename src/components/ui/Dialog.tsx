@@ -1,85 +1,84 @@
-'use client';
-
-import * as React from 'react';
-import * as RadixDialog from '@radix-ui/react-dialog';
+import { ReactNode, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { cn } from '@/lib/Utils';
+import { Button } from './Button';
 
-const Dialog = RadixDialog.Root;
-const DialogTrigger = RadixDialog.Trigger;
-const DialogPortal = RadixDialog.Portal;
+interface DialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  children: ReactNode;
+}
 
-const DialogOverlay = React.forwardRef<
-    React.ElementRef<typeof RadixDialog.Overlay>,
-    React.ComponentPropsWithoutRef<typeof RadixDialog.Overlay>
->(({ className, ...props }, ref) => (
-    <RadixDialog.Overlay
-        ref={ref}
-        className={cn(
-            'fixed inset-0 z-50 bg-black/60 backdrop-blur-sm',
-            className
-        )}
-        {...props}
-    />
-));
-DialogOverlay.displayName = RadixDialog.Overlay.displayName;
+interface DialogContentProps {
+  children: ReactNode;
+  className?: string;
+}
 
-const DialogContent = React.forwardRef<
-    React.ElementRef<typeof RadixDialog.Content>,
-    React.ComponentPropsWithoutRef<typeof RadixDialog.Content>
->(({ className, children, ...props }, ref) => (
-    <DialogPortal>
-        <DialogOverlay />
-        <RadixDialog.Content
-            ref={ref}
-            className={cn(
-                'fixed left-1/2 top-1/2 z-50 grid w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 gap-4 border border-gray-200 bg-white p-6 shadow-xl duration-200 sm:rounded-lg',
-                className
-            )}
-            {...props}
-        >
-            {children}
-            <RadixDialog.Close className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition">
-                <X className="h-5 w-5" />
-            </RadixDialog.Close>
-        </RadixDialog.Content>
-    </DialogPortal>
-));
-DialogContent.displayName = RadixDialog.Content.displayName;
+interface DialogHeaderProps {
+  children: ReactNode;
+}
 
-const DialogHeader = ({
-    className,
-    ...props
-}: React.HTMLAttributes<HTMLDivElement>) => (
-    <div
-        className={cn(
-            'flex flex-col space-y-1.5 text-center sm:text-left',
-            className
-        )}
-        {...props}
-    />
-);
-DialogHeader.displayName = 'DialogHeader';
+interface DialogTitleProps {
+  children: ReactNode;
+  className?: string;
+}
 
-const DialogTitle = React.forwardRef<
-    React.ElementRef<typeof RadixDialog.Title>,
-    React.ComponentPropsWithoutRef<typeof RadixDialog.Title>
->(({ className, ...props }, ref) => (
-    <RadixDialog.Title
-        ref={ref}
-        className={cn(
-            'text-lg font-semibold leading-none tracking-tight',
-            className
-        )}
-        {...props}
-    />
-));
-DialogTitle.displayName = RadixDialog.Title.displayName;
+export function Dialog({ isOpen, onClose, children }: DialogProps) {
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
 
-export {
-    Dialog,
-    DialogTrigger,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-};
+    if (isOpen) {
+      document.addEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'hidden';
+    }
+
+    return () => {
+      document.removeEventListener('keydown', handleEscape);
+      document.body.style.overflow = 'unset';
+    };
+  }, [isOpen, onClose]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      {/* Backdrop */}
+      <div 
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      
+      {/* Dialog */}
+      <div className="relative z-10 w-full max-w-7xl mx-4">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+export function DialogContent({ children, className = '' }: DialogContentProps) {
+  return (
+    <div className={`relative bg-white rounded-lg shadow-xl ${className}`}>
+      {children}
+    </div>
+  );
+}
+
+export function DialogHeader({ children }: DialogHeaderProps) {
+  return (
+    <div className="px-6 py-4 border-b border-slate-700">
+      {children}
+    </div>
+  );
+}
+
+export function DialogTitle({ children, className = '' }: DialogTitleProps) {
+  return (
+    <h2 className={`text-lg font-semibold ${className}`}>
+      {children}
+    </h2>
+  );
+}
