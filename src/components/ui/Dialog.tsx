@@ -33,13 +33,13 @@ const DialogContent = React.forwardRef<
         <RadixDialog.Content
             ref={ref}
             className={cn(
-                'fixed left-1/2 top-1/2 z-50 grid w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 gap-4 border border-white/10 bg-[#1F1F1F] p-6 shadow-xl duration-200 sm:rounded-2xl',
+                'fixed left-1/2 top-1/2 z-50 grid w-full max-w-5xl -translate-x-1/2 -translate-y-1/2 gap-4 border border-gray-200 bg-white p-6 shadow-xl duration-200 sm:rounded-lg',
                 className
             )}
             {...props}
         >
             {children}
-            <RadixDialog.Close className="absolute right-4 top-4 text-white/70 hover:text-white transition">
+            <RadixDialog.Close className="absolute right-4 top-4 text-gray-400 hover:text-gray-600 transition">
                 <X className="h-5 w-5" />
             </RadixDialog.Close>
         </RadixDialog.Content>
@@ -47,8 +47,39 @@ const DialogContent = React.forwardRef<
 ));
 DialogContent.displayName = RadixDialog.Content.displayName;
 
+const DialogHeader = ({
+    className,
+    ...props
+}: React.HTMLAttributes<HTMLDivElement>) => (
+    <div
+        className={cn(
+            'flex flex-col space-y-1.5 text-center sm:text-left',
+            className
+        )}
+        {...props}
+    />
+);
+DialogHeader.displayName = 'DialogHeader';
+
+const DialogTitle = React.forwardRef<
+    React.ElementRef<typeof RadixDialog.Title>,
+    React.ComponentPropsWithoutRef<typeof RadixDialog.Title>
+>(({ className, ...props }, ref) => (
+    <RadixDialog.Title
+        ref={ref}
+        className={cn(
+            'text-lg font-semibold leading-none tracking-tight',
+            className
+        )}
+        {...props}
+    />
+));
+DialogTitle.displayName = RadixDialog.Title.displayName;
+
 export {
     Dialog,
     DialogTrigger,
     DialogContent,
+    DialogHeader,
+    DialogTitle,
 };
