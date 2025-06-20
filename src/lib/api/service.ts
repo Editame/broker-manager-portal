@@ -68,3 +68,22 @@ export async function sendMessage(queueName: string, messageData: SendMessageReq
         throw new Error('No se pudo enviar el mensaje a la cola');
     }
 }
+
+export async function deleteMessage(queueName: string, messageId: string): Promise<void> {
+    try {
+        console.log('Deleting message:', messageId, 'from queue:', queueName);
+        
+        const res = await fetch(ENDPOINTS.QUEUE_MESSAGE(queueName, messageId), {
+            method: 'DELETE',
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        console.log('Message deleted successfully');
+    } catch (error) {
+        console.error('Error deleting message:', error);
+        throw new Error('No se pudo eliminar el mensaje');
+    }
+}

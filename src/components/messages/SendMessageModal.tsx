@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { QueueInfo } from '@/types/queue';
 import { Button } from '@/components/ui/Button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
-import { Send, X, Plus, Trash2, Wand2, AlertCircle, CheckCircle } from 'lucide-react';
+import { Send, X, Plus, Trash2, Wand2, AlertCircle, CheckCircle, MessageCircle } from 'lucide-react';
 
 interface SendMessageModalProps {
   queue: QueueInfo | null;
@@ -35,9 +35,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
     }
 
     try {
-      // Intentar parsear como JSON
       const parsed = JSON.parse(text);
-      // Si es válido, formatearlo con indentación
       const formatted = JSON.stringify(parsed, null, 2);
       
       setMessageData(prev => ({
@@ -47,7 +45,6 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
       
       setJsonStatus('valid');
     } catch (error) {
-      // No es JSON válido, mantener como texto
       setJsonStatus('invalid');
     }
   };
@@ -55,7 +52,6 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
   const handleBodyChange = (value: string) => {
     setMessageData(prev => ({ ...prev, body: value }));
     
-    // Auto-detectar si es JSON válido
     if (value.trim()) {
       try {
         JSON.parse(value.trim());
@@ -70,7 +66,6 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
 
   const handleSend = () => {
     if (!messageData.body.trim()) {
-      alert('El cuerpo del mensaje es requerido');
       return;
     }
     
@@ -123,26 +118,13 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
   const getJsonStatusIcon = () => {
     switch (jsonStatus) {
       case 'valid':
-        return <CheckCircle className="h-4 w-4 text-green-400" />;
+        return <CheckCircle className="h-3 w-3 text-emerald-400" />;
       case 'invalid':
-        return <AlertCircle className="h-4 w-4 text-red-400" />;
+        return <AlertCircle className="h-3 w-3 text-red-400" />;
       case 'text':
-        return <AlertCircle className="h-4 w-4 text-yellow-400" />;
+        return <AlertCircle className="h-3 w-3 text-amber-400" />;
       default:
         return null;
-    }
-  };
-
-  const getJsonStatusText = () => {
-    switch (jsonStatus) {
-      case 'valid':
-        return 'JSON válido';
-      case 'invalid':
-        return 'JSON inválido';
-      case 'text':
-        return 'Texto plano';
-      default:
-        return '';
     }
   };
 
@@ -150,30 +132,44 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
 
   return (
     <Dialog isOpen={isOpen} onClose={handleClose}>
-      <DialogContent className="max-w-7xl bg-slate-800 border border-slate-700 max-h-[90vh] overflow-hidden">
-        <DialogHeader>
-          <DialogTitle className="text-white flex items-center gap-2">
-            <Send className="h-5 w-5 text-blue-400" />
-            Enviar Mensaje a: {queue.name}
-          </DialogTitle>
+      <DialogContent className="max-w-5xl bg-slate-800 border border-slate-700 max-h-[85vh] overflow-hidden">
+        {/* Header Compacto */}
+        <DialogHeader className="border-b border-slate-700 pb-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-4 w-4 text-teal-400" />
+              <DialogTitle className="text-white text-lg">
+                Enviar a: <span className="text-teal-400 font-mono text-base">{queue.name}</span>
+              </DialogTitle>
+            </div>
+            <Button
+              onClick={handleClose}
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-white h-8 w-8 p-0"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </DialogHeader>
 
-        <div className="flex flex-col h-[80vh] p-6 gap-6">
-          {/* Cuerpo del mensaje - ÁREA PRINCIPAL */}
+        <div className="flex flex-col h-[70vh] p-4 gap-4">
+          {/* Área de Mensaje - Principal */}
           <div className="flex-1 flex flex-col min-h-0">
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-lg font-medium text-slate-300">
-                Mensaje *
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-sm font-medium text-slate-300">
+                Contenido del Mensaje *
               </label>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 {jsonStatus && (
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-1 text-xs">
                     {getJsonStatusIcon()}
-                    <span className={`font-medium ${
-                      jsonStatus === 'valid' ? 'text-green-400' :
-                      jsonStatus === 'invalid' ? 'text-red-400' : 'text-yellow-400'
+                    <span className={`${
+                      jsonStatus === 'valid' ? 'text-emerald-400' :
+                      jsonStatus === 'invalid' ? 'text-red-400' : 'text-amber-400'
                     }`}>
-                      {getJsonStatusText()}
+                      {jsonStatus === 'valid' ? 'JSON válido' :
+                       jsonStatus === 'invalid' ? 'JSON inválido' : 'Texto'}
                     </span>
                   </div>
                 )}
@@ -182,136 +178,109 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
                   onClick={validateAndFormatJson}
                   disabled={!messageData.body.trim()}
                   size="sm"
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2"
+                  variant="ghost"
+                  className="text-purple-400 hover:text-purple-300 hover:bg-purple-500/20 text-xs h-7"
                 >
-                  <Wand2 className="h-4 w-4 mr-2" />
-                  Formatear JSON
+                  <Wand2 className="h-3 w-3 mr-1" />
+                  Formatear
                 </Button>
               </div>
             </div>
+            
             <textarea
               value={messageData.body}
               onChange={(e) => handleBodyChange(e.target.value)}
-              placeholder={`{
-  "orderId": "ORD-2024-001",
-  "amount": 1250.75,
-  "currency": "USD",
-  "status": "pending",
-  "customer": {
-    "id": "cust_12345",
-    "name": "Juan Pérez",
-    "email": "juan.perez@email.com",
-    "address": {
-      "street": "Calle Principal 123",
-      "city": "Madrid",
-      "country": "España",
-      "zipCode": "28001"
-    }
-  },
-  "items": [
-    {
-      "id": "item_001",
-      "name": "Producto A",
-      "quantity": 2,
-      "price": 500.00
-    },
-    {
-      "id": "item_002", 
-      "name": "Producto B",
-      "quantity": 1,
-      "price": 250.75
-    }
-  ],
-  "metadata": {
-    "source": "web",
-    "timestamp": "2024-06-20T10:30:00Z",
-    "version": "1.0"
-  }
-}`}
-              className="flex-1 w-full px-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none font-mono text-sm leading-relaxed min-h-[400px]"
+              placeholder={`{"orderId": "12345", "amount": 99.99, "status": "pending"}`}
+              className="flex-1 w-full px-3 py-2 bg-slate-900/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 resize-none font-mono text-sm leading-relaxed min-h-[300px]"
             />
-            <p className="text-sm text-slate-500 mt-2">
-              Ingresa tu mensaje en formato JSON o texto plano. Usa el botón "Formatear JSON" para validar y embellecer el JSON.
-            </p>
           </div>
 
-          {/* Headers personalizados - ÁREA SECUNDARIA */}
+          {/* Headers - Área Secundaria Colapsable */}
           <div className="flex-shrink-0">
-            <label className="block text-lg font-medium text-slate-300 mb-3">
-              Headers Personalizados
-            </label>
-            
-            {/* Agregar header */}
-            <div className="flex gap-3 mb-4">
-              <input
-                type="text"
-                value={headerKey}
-                onChange={(e) => setHeaderKey(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Clave del header"
-                className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <input
-                type="text"
-                value={headerValue}
-                onChange={(e) => setHeaderValue(e.target.value)}
-                onKeyPress={handleKeyPress}
-                placeholder="Valor del header"
-                className="flex-1 px-4 py-2 bg-slate-700 border border-slate-600 rounded-md text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <Button
-                type="button"
-                onClick={addHeader}
-                disabled={!headerKey.trim() || !headerValue.trim()}
-                className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed px-6"
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            </div>
+            <details className="group">
+              <summary className="cursor-pointer text-sm font-medium text-slate-300 hover:text-white transition-colors mb-2 list-none">
+                <span className="flex items-center gap-2">
+                  <span className="group-open:rotate-90 transition-transform">▶</span>
+                  Headers Personalizados ({Object.keys(messageData.headers).length})
+                </span>
+              </summary>
+              
+              <div className="space-y-3 mt-3">
+                {/* Agregar header */}
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={headerKey}
+                    onChange={(e) => setHeaderKey(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Clave"
+                    className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/50 text-sm"
+                  />
+                  <input
+                    type="text"
+                    value={headerValue}
+                    onChange={(e) => setHeaderValue(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder="Valor"
+                    className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/50 text-sm"
+                  />
+                  <Button
+                    type="button"
+                    onClick={addHeader}
+                    disabled={!headerKey.trim() || !headerValue.trim()}
+                    size="sm"
+                    variant="ghost"
+                    className="text-teal-400 hover:text-teal-300 hover:bg-teal-500/20 disabled:opacity-30 h-9 w-9 p-0"
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
 
-            {/* Lista de headers */}
-            {Object.entries(messageData.headers).length > 0 && (
-              <div className="space-y-2 max-h-32 overflow-y-auto bg-slate-900 p-4 rounded-lg">
-                <h4 className="text-sm font-medium text-slate-300 mb-2">Headers agregados:</h4>
-                {Object.entries(messageData.headers).map(([key, value]) => (
-                  <div key={key} className="flex items-center justify-between bg-slate-700 px-4 py-2 rounded">
-                    <span className="text-sm text-white font-mono">
-                      <span className="text-blue-400 font-medium">{key}:</span> {value}
-                    </span>
-                    <Button
-                      type="button"
-                      onClick={() => removeHeader(key)}
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-400 hover:text-red-300 hover:bg-red-900/20"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                {/* Lista de headers */}
+                {Object.entries(messageData.headers).length > 0 && (
+                  <div className="space-y-1 max-h-24 overflow-y-auto bg-slate-700/20 border border-slate-600/30 rounded p-2">
+                    {Object.entries(messageData.headers).map(([key, value]) => (
+                      <div key={key} className="flex items-center justify-between bg-slate-700/50 px-2 py-1 rounded text-xs">
+                        <span className="text-white font-mono truncate">
+                          <span className="text-teal-400">{key}:</span> {value}
+                        </span>
+                        <Button
+                          type="button"
+                          onClick={() => removeHeader(key)}
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:text-red-300 hover:bg-red-500/20 h-6 w-6 p-0 ml-2 flex-shrink-0"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                )}
               </div>
-            )}
+            </details>
           </div>
 
-          {/* Botones - ÁREA FIJA */}
-          <div className="flex-shrink-0 flex justify-end gap-4 pt-4 border-t border-slate-700">
+          {/* Botones */}
+          <div className="flex-shrink-0 flex justify-end gap-2 pt-3 border-t border-slate-700/50">
             <Button
               type="button"
               onClick={handleClose}
-              variant="outline"
-              className="bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600 px-6 py-2"
+              variant="ghost"
+              size="sm"
+              className="text-slate-400 hover:text-white hover:bg-slate-600/50"
             >
-              <X className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
             <Button
               type="button"
               onClick={handleSend}
               disabled={!messageData.body.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 px-6 py-2"
+              size="sm"
+              className="bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-30"
             >
-              <Send className="h-4 w-4 mr-2" />
-              Enviar Mensaje
+              <Send className="h-3 w-3 mr-1" />
+              Enviar
             </Button>
           </div>
         </div>

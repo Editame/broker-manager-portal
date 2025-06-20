@@ -21,7 +21,7 @@ import { ErrorMessage } from '@/components/common/ErrorMessage';
 // Types
 import { QueueInfo, QueueFilters as QueueFiltersType } from '@/types/queue';
 import { Message } from '@/types/message';
-import { sendMessage } from '@/lib/api/service';
+import { sendMessage, deleteMessage } from '@/lib/api/service';
 
 import '@/app/globals.css';
 
@@ -109,31 +109,71 @@ export default function HomePage() {
     console.log('Pausar/Reanudar cola:', queue.name);
   };
 
+  const handleDeleteMessage = async (messageId: string) => {
+    if (!selectedQueue) return;
+    
+    try {
+      await deleteMessage(selectedQueue.name, messageId);
+      
+      // Refrescar los mensajes para ver el cambio
+      await loadMessages(selectedQueue.name);
+      
+      // También refrescar las colas para actualizar el contador
+      refetchQueues();
+      
+      alert('Mensaje eliminado correctamente');
+    } catch (error) {
+      console.error('Error deleting message:', error);
+      alert('Error al eliminar el mensaje');
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="min-h-screen bg-slate-900">
-        {/* Header */}
-        <header className="bg-slate-800 shadow-lg border-b border-slate-700">
+        {/* Header Mejorado */}
+        <header className="bg-gradient-to-r from-slate-800 to-slate-750 shadow-lg border-b border-slate-700">
           <div className="max-w-full mx-auto px-6">
-            <div className="flex items-center justify-between h-16">
-              <div>
-                <h1 className="text-2xl font-bold text-white tracking-tight">
-                  Broker Manager
-                </h1>
-                <p className="text-sm text-slate-300 font-medium">
-                  Administrador de colas ActiveMQ
-                </p>
-              </div>
+            <div className="flex items-center justify-between h-14">
+              {/* Logo y Título */}
               <div className="flex items-center gap-4">
-                <div className="bg-slate-700 px-4 py-2 rounded-lg text-sm text-slate-200 border border-slate-600 font-medium">
-                  <div>Colas: <span className="text-blue-400 font-semibold">{queues.length}</span></div>
-                  <div>Estado: <span className="text-green-400 font-semibold">Activo</span></div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-emerald-500/20 p-2 rounded-lg border border-emerald-500/30">
+                    <RefreshCcw className="h-5 w-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h1 className="text-xl font-bold text-white tracking-tight">
+                      Broker Manager
+                    </h1>
+                    <p className="text-xs text-slate-400 font-medium">
+                      ActiveMQ Administration
+                    </p>
+                  </div>
                 </div>
+              </div>
+
+              {/* Métricas y Controles */}
+              <div className="flex items-center gap-4">
+                {/* Métricas Compactas */}
+                <div className="flex items-center gap-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-slate-400">Colas:</span>
+                    <span className="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full font-semibold border border-emerald-500/30">
+                      {queues.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
+                    <span className="text-emerald-400 font-semibold">Activo</span>
+                  </div>
+                </div>
+
+                {/* Botón de Actualizar */}
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   onClick={refetchQueues}
                   disabled={queuesLoading}
-                  className="bg-slate-700 border-slate-600 text-slate-200 hover:bg-slate-600 hover:text-white font-medium transition-all duration-200"
+                  className="bg-slate-700/50 border border-slate-600/50 text-slate-200 hover:bg-slate-600 hover:text-white font-medium transition-all duration-200 px-4"
                 >
                   <RefreshCcw className={`h-4 w-4 mr-2 ${queuesLoading ? 'animate-spin' : ''}`} />
                   Actualizar
@@ -144,8 +184,8 @@ export default function HomePage() {
         </header>
 
         {/* Main Content */}
-        <main className="max-w-full mx-auto px-6 py-6">
-          <div className="space-y-6">
+        <main className="max-w-full mx-auto px-6 py-4">
+          <div className="space-y-4">
             {/* Filters */}
             <QueueFilters
               filters={filters}
@@ -153,9 +193,9 @@ export default function HomePage() {
             />
 
             {/* Main Layout: Lista de Colas + Panel de Mensajes */}
-            <div className="grid grid-cols-12 gap-6 h-[calc(100vh-280px)]">
+            <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
               {/* Lista de Colas - Columna Izquierda */}
-              <div className="col-span-5 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+              <div className="col-span-5 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-lg">
                 {queuesLoading ? (
                   <div className="p-4">
                     <LoadingSpinner count={8} />
@@ -179,7 +219,7 @@ export default function HomePage() {
               </div>
 
               {/* Panel de Mensajes - Columna Derecha */}
-              <div className="col-span-7 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden">
+              <div className="col-span-7 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-lg">
                 <MessagePanel
                   queue={selectedQueue}
                   messages={messages}
@@ -187,6 +227,7 @@ export default function HomePage() {
                   error={messagesError}
                   onViewMessage={handleViewMessage}
                   onRefresh={handleRefreshMessages}
+                  onDeleteMessage={handleDeleteMessage}
                 />
               </div>
             </div>
