@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
 import { RefreshCcw } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button';
 import { useQueues } from '@/hooks/useQueues';
 import { useMessages } from '@/hooks/useMessages';
 import { useBrokerMetrics } from '@/hooks/useBrokerMetrics';
+import { useConnections } from '@/hooks/useConnections';
 
 // Components
 import { QueueFilters } from '@/components/queues/QueueFilters';
@@ -30,11 +31,14 @@ import { sendMessage, deleteMessage } from '@/lib/api/service';
 import '@/app/globals.css';
 
 export default function HomePage() {
-  // Broker metrics
-  const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useBrokerMetrics();
+  // Connection management
+  const { activeConnection, loading: connectionsLoading } = useConnections();
   
-  // Queue management
-  const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues();
+  // Broker metrics - solo si hay conexión activa
+  const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useBrokerMetrics(!!activeConnection);
+  
+  // Queue management - solo si hay conexión activa
+  const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues(!!activeConnection);
   const { messages, loading: messagesLoading, error: messagesError, loadMessages, clearMessages } = useMessages();
 
   // UI State
@@ -42,6 +46,7 @@ export default function HomePage() {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [sendMessageQueue, setSendMessageQueue] = useState<QueueInfo | null>(null);
   const [showConnectionModal, setShowConnectionModal] = useState(false);
+  const [hasCheckedConnection, setHasCheckedConnection] = useState(false);
   const [filters, setFilters] = useState<QueueFiltersType>({
     general: '',
     prefix: '',
@@ -120,9 +125,57 @@ export default function HomePage() {
 
   const handleConnectionChange = () => {
     // Refrescar datos cuando cambie la conexión
-    refetchQueues();
-    refetchMetrics();
+    if (activeConnection) {
+      refetchQueues();
+      refetchMetrics();
+    }
   };
+
+  // Verificar conexión al cargar la página
+  useEffect(() => {
+    if (!connectionsLoading) {
+      setHasCheckedConnection(true);
+      if (!activeConnection) {
+        setShowConnectionModal(true);
+      }
+    }
+  }, [activeConnection, connectionsLoading]);
+
+  // Mostrar loading mientras se verifica la conexión
+  if (!hasCheckedConnection) {
+    return (
+      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Verificando conexión...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Mostrar modal de conexión si no hay conexión activa
+  if (!activeConnection) {
+    return (
+      <TooltipProvider>
+        <div className="min-h-screen bg-slate-100 flex items-center justify-center">
+          <div className="text-center">
+            <div className="bg-blue-500/10 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+              <RefreshCcw className="h-8 w-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-slate-800 mb-2">Broker Manager</h1>
+            <p className="text-slate-600 mb-6">Configura una conexión para comenzar</p>
+          </div>
+          
+          <ConnectionModal
+            isOpen={showConnectionModal}
+            onClose={() => {}}
+            onConnectionChange={handleConnectionChange}
+            canClose={false}
+          />
+        </div>
+      </TooltipProvider>
+    );
+  }
 
   const handlePurgeQueue = (queue: QueueInfo) => {
     // TODO: Implementar confirmación y purga
@@ -314,6 +367,7 @@ export default function HomePage() {
           isOpen={showConnectionModal}
           onClose={handleCloseConnectionModal}
           onConnectionChange={handleConnectionChange}
+          canClose={true}
         />
 
         {/* Message Viewer Modal */}

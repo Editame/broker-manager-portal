@@ -3,14 +3,16 @@ import { QueueInfo } from '@/types/queue';
 import { LoadingState } from '@/types/common';
 import { fetchQueues } from '@/lib/api/service';
 
-export function useQueues() {
+export function useQueues(enabled: boolean = true) {
   const [queues, setQueues] = useState<QueueInfo[]>([]);
   const [{ loading, error }, setLoadingState] = useState<LoadingState>({
-    loading: true,
+    loading: false,
     error: null,
   });
 
   const loadQueues = useCallback(async () => {
+    if (!enabled) return;
+    
     try {
       setLoadingState({ loading: true, error: null });
       const queueData = await fetchQueues();
@@ -23,11 +25,13 @@ export function useQueues() {
       return;
     }
     setLoadingState({ loading: false, error: null });
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    loadQueues();
-  }, [loadQueues]);
+    if (enabled) {
+      loadQueues();
+    }
+  }, [loadQueues, enabled]);
 
   return {
     queues,

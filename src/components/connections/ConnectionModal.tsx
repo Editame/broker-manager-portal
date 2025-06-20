@@ -17,9 +17,10 @@ interface ConnectionModalProps {
   isOpen: boolean;
   onClose: () => void;
   onConnectionChange?: () => void;
+  canClose?: boolean;
 }
 
-export function ConnectionModal({ isOpen, onClose, onConnectionChange }: ConnectionModalProps) {
+export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose = true }: ConnectionModalProps) {
   const [connections, setConnections] = useState<BrokerConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -203,9 +204,11 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange }: Connect
             <Settings className="h-6 w-6 text-blue-600" />
             <h2 className="text-xl font-semibold text-gray-900">Gestión de Conexiones</h2>
           </div>
-          <Button variant="ghost" onClick={onClose} size="sm">
-            <X className="h-5 w-5" />
-          </Button>
+          {canClose && (
+            <Button variant="ghost" onClick={onClose} size="sm">
+              <X className="h-5 w-5" />
+            </Button>
+          )}
         </div>
 
         {/* Content */}

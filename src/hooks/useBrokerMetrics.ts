@@ -21,12 +21,14 @@ export interface BrokerMetrics {
   timestamp: string;
 }
 
-export function useBrokerMetrics() {
+export function useBrokerMetrics(enabled: boolean = true) {
   const [metrics, setMetrics] = useState<BrokerMetrics | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMetrics = useCallback(async () => {
+    if (!enabled) return;
+    
     try {
       setLoading(true);
       setError(null);
@@ -44,16 +46,17 @@ export function useBrokerMetrics() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [enabled]);
 
   useEffect(() => {
-    fetchMetrics();
-    
-    // Actualizar métricas cada 30 segundos
-    const interval = setInterval(fetchMetrics, 30000);
-    
-    return () => clearInterval(interval);
-  }, [fetchMetrics]);
+    if (enabled) {
+      fetchMetrics();
+      
+      // Actualizar métricas cada 30 segundos
+      const interval = setInterval(fetchMetrics, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [fetchMetrics, enabled]);
 
   return {
     metrics,
