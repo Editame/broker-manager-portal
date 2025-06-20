@@ -18,6 +18,8 @@ import { MessageViewer } from '@/components/messages/MessageViewer';
 import { SendMessageModal, SendMessageData } from '@/components/messages/SendMessageModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
+import { ConnectionStatus } from '@/components/connections/ConnectionStatus';
+import { ConnectionModal } from '@/components/connections/ConnectionModal';
 
 // Types
 import { QueueInfo, QueueFilters as QueueFiltersType } from '@/types/queue';
@@ -39,6 +41,7 @@ export default function HomePage() {
   const [selectedQueue, setSelectedQueue] = useState<QueueInfo | null>(null);
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null);
   const [sendMessageQueue, setSendMessageQueue] = useState<QueueInfo | null>(null);
+  const [showConnectionModal, setShowConnectionModal] = useState(false);
   const [filters, setFilters] = useState<QueueFiltersType>({
     general: '',
     prefix: '',
@@ -105,6 +108,20 @@ export default function HomePage() {
 
   const handleCloseSendMessage = () => {
     setSendMessageQueue(null);
+  };
+
+  const handleOpenConnectionModal = () => {
+    setShowConnectionModal(true);
+  };
+
+  const handleCloseConnectionModal = () => {
+    setShowConnectionModal(false);
+  };
+
+  const handleConnectionChange = () => {
+    // Refrescar datos cuando cambie la conexión
+    refetchQueues();
+    refetchMetrics();
   };
 
   const handlePurgeQueue = (queue: QueueInfo) => {
@@ -197,12 +214,9 @@ export default function HomePage() {
 
               {/* Controles Sutiles */}
               <div className="flex items-center gap-3">
-                {/* Estado y Colas */}
+                {/* Estado de Conexión y Colas */}
                 <div className="flex items-center gap-4 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    <span className="text-slate-600">Activo</span>
-                  </div>
+                  <ConnectionStatus onOpenSettings={handleOpenConnectionModal} />
                   <div className="text-slate-500">
                     <span className="font-medium text-slate-700">{queues.length}</span> colas
                   </div>
@@ -293,6 +307,13 @@ export default function HomePage() {
           isOpen={!!sendMessageQueue}
           onClose={handleCloseSendMessage}
           onSend={handleSendMessageSubmit}
+        />
+
+        {/* Connection Management Modal */}
+        <ConnectionModal
+          isOpen={showConnectionModal}
+          onClose={handleCloseConnectionModal}
+          onConnectionChange={handleConnectionChange}
         />
 
         {/* Message Viewer Modal */}
