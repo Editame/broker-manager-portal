@@ -152,22 +152,22 @@ export function MessagePanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header Compacto y Mejorado */}
-      <div className="border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-750">
+      <div className="border-b border-slate-300 bg-gradient-to-r from-slate-100 to-slate-50">
         <div className="flex items-center justify-between p-3">
           {/* Título y Contador */}
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-2">
-              <MessageSquare className="h-5 w-5 text-teal-400" />
-              <h3 className="font-semibold text-white text-lg">
+              <MessageSquare className="h-5 w-5 text-cyan-500" />
+              <h3 className="font-semibold text-slate-800 text-lg">
                 {queue.name}
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs bg-teal-500/20 text-teal-300 px-2 py-1 rounded-full font-medium border border-teal-500/30">
+              <span className="text-xs bg-cyan-500/20 text-cyan-700 px-2 py-1 rounded-full font-medium border border-cyan-500/30">
                 {filteredAndSortedMessages.length}/{messages.length}
               </span>
               {bodyFilter && (
-                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full font-medium border border-amber-500/30">
+                <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full font-medium border border-amber-500/30">
                   filtrado: "{bodyFilter}"
                 </span>
               )}
@@ -181,7 +181,7 @@ export function MessagePanel({
               size="sm"
               onClick={onRefresh}
               disabled={loading}
-              className="text-slate-300 hover:text-white hover:bg-slate-600/50 transition-all duration-200"
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 transition-all duration-200"
               title="Actualizar mensajes"
             >
               <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -191,7 +191,7 @@ export function MessagePanel({
                 variant="ghost"
                 size="sm"
                 onClick={downloadAllMessages}
-                className="text-slate-300 hover:text-white hover:bg-slate-600/50 transition-all duration-200"
+                className="text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 transition-all duration-200"
                 title="Descargar mensajes"
               >
                 <Download className="h-4 w-4" />
@@ -205,18 +205,18 @@ export function MessagePanel({
           <div className="flex items-center gap-2">
             {/* Filtro por contenido del body */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
               <input
                 type="text"
                 placeholder="Buscar en contenido de mensajes..."
                 value={bodyFilter}
                 onChange={(e) => setBodyFilter(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-slate-700/50 border border-slate-600/50 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 focus:bg-slate-700 transition-all duration-200 text-sm"
+                className="w-full pl-10 pr-10 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200 text-sm"
               />
               {bodyFilter && (
                 <button
                   onClick={clearBodyFilter}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -228,7 +228,7 @@ export function MessagePanel({
               variant="ghost"
               size="sm"
               onClick={handleSortToggle}
-              className="text-slate-300 hover:text-white hover:bg-slate-600/50 transition-all duration-200 px-3 border border-slate-600/50 rounded-lg"
+              className="text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 transition-all duration-200 px-3 border border-slate-300 rounded-lg"
               title={getSortLabel()}
             >
               {getSortIcon()}
@@ -252,13 +252,13 @@ export function MessagePanel({
           </div>
         ) : filteredAndSortedMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">
-            <div className="bg-slate-700/30 rounded-full p-6 mb-4">
+            <div className="bg-slate-200/50 rounded-full p-6 mb-4">
               <MessageSquare className="h-12 w-12 text-slate-500" />
             </div>
-            <div className="text-lg font-medium text-white mb-2">
+            <div className="text-lg font-medium text-slate-800 mb-2">
               {bodyFilter ? 'Sin resultados' : 'Cola vacía'}
             </div>
-            <p className="text-slate-400 mb-4 max-w-sm">
+            <p className="text-slate-600 mb-4 max-w-sm">
               {bodyFilter 
                 ? `No encontramos mensajes con "${bodyFilter}"` 
                 : 'Esta cola no tiene mensajes en este momento'
@@ -269,7 +269,7 @@ export function MessagePanel({
                 variant="outline"
                 size="sm"
                 onClick={clearBodyFilter}
-                className="bg-slate-700/50 border-slate-600 text-slate-200 hover:bg-slate-600 hover:text-white transition-all duration-200"
+                className="bg-white border-slate-300 text-slate-700 hover:bg-slate-100 hover:text-slate-800 transition-all duration-200"
               >
                 <X className="h-4 w-4 mr-2" />
                 Limpiar filtro
@@ -277,7 +277,7 @@ export function MessagePanel({
             )}
           </div>
         ) : (
-          <div className="divide-y divide-slate-700/50">
+          <div className="divide-y divide-slate-200">
             {filteredAndSortedMessages.map((message, index) => {
               const isRecent = new Date(message.timestamp).getTime() > Date.now() - 5 * 60 * 1000; // Últimos 5 minutos
               const messageAge = Date.now() - new Date(message.timestamp).getTime();
@@ -286,7 +286,7 @@ export function MessagePanel({
               return (
                 <div
                   key={message.id}
-                  className="group hover:bg-gradient-to-r hover:from-slate-700/30 hover:to-slate-600/20 transition-all duration-200 cursor-pointer border-l-2 border-transparent hover:border-l-teal-500/50"
+                  className="group hover:bg-slate-50 transition-all duration-200 cursor-pointer border-l-2 border-transparent hover:border-l-cyan-500/50"
                   onClick={() => onViewMessage(message)}
                 >
                   <div className="p-4">
@@ -298,10 +298,10 @@ export function MessagePanel({
                           {/* Indicador de Estado */}
                           <div className="flex items-center gap-2">
                             <div className={`w-2 h-2 rounded-full ${
-                              isVeryRecent ? 'bg-emerald-400 animate-pulse' : 
-                              isRecent ? 'bg-teal-400' : 'bg-slate-500'
+                              isVeryRecent ? 'bg-emerald-500 animate-pulse' : 
+                              isRecent ? 'bg-cyan-500' : 'bg-slate-400'
                             }`} />
-                            <span className="text-xs font-mono text-slate-400 bg-slate-800/50 px-2 py-1 rounded border border-slate-700/50">
+                            <span className="text-xs font-mono text-slate-500 bg-slate-100 px-2 py-1 rounded border border-slate-200">
                               #{index + 1} • {message.id.substring(0, 8)}...
                             </span>
                           </div>
@@ -313,15 +313,15 @@ export function MessagePanel({
                           
                           {/* Badge de Reciente */}
                           {isVeryRecent && (
-                            <span className="text-xs bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full font-medium border border-emerald-500/30">
+                            <span className="text-xs bg-emerald-500/20 text-emerald-700 px-2 py-1 rounded-full font-medium border border-emerald-500/30">
                               Nuevo
                             </span>
                           )}
                         </div>
 
                         {/* Contenido del Mensaje */}
-                        <div className="bg-slate-800/30 rounded-lg p-3 border border-slate-700/30">
-                          <p className="text-sm text-slate-300 font-mono leading-relaxed break-all">
+                        <div className="bg-slate-100/50 rounded-lg p-3 border border-slate-200">
+                          <p className="text-sm text-slate-700 font-mono leading-relaxed break-all">
                             {truncateMessage(message.body, 120)}
                           </p>
                         </div>
@@ -336,7 +336,7 @@ export function MessagePanel({
                             e.stopPropagation();
                             onViewMessage(message);
                           }}
-                          className="text-teal-400 hover:text-teal-300 hover:bg-teal-500/20 transition-all duration-200 h-8 w-8 p-0"
+                          className="text-cyan-500 hover:text-cyan-600 hover:bg-cyan-500/20 transition-all duration-200 h-8 w-8 p-0"
                           title="Ver mensaje completo"
                         >
                           <Eye className="h-4 w-4" />
@@ -346,7 +346,7 @@ export function MessagePanel({
                             variant="ghost"
                             size="sm"
                             onClick={(e) => handleDeleteMessage(message.id, e)}
-                            className="text-red-400 hover:text-red-300 hover:bg-red-500/20 transition-all duration-200 h-8 w-8 p-0"
+                            className="text-red-500 hover:text-red-600 hover:bg-red-500/20 transition-all duration-200 h-8 w-8 p-0"
                             title="Eliminar mensaje"
                           >
                             <Trash2 className="h-4 w-4" />

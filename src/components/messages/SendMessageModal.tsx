@@ -137,9 +137,9 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
         <DialogHeader className="border-b border-slate-700 pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-teal-400" />
+              <MessageCircle className="h-4 w-4 text-cyan-400" />
               <DialogTitle className="text-white text-lg">
-                Enviar a: <span className="text-teal-400 font-mono text-base">{queue.name}</span>
+                Enviar a: <span className="text-cyan-400 font-mono text-base">{queue.name}</span>
               </DialogTitle>
             </div>
             <Button
@@ -191,7 +191,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
               value={messageData.body}
               onChange={(e) => handleBodyChange(e.target.value)}
               placeholder={`{"orderId": "12345", "amount": 99.99, "status": "pending"}`}
-              className="flex-1 w-full px-3 py-2 bg-slate-900/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-teal-500/50 focus:border-teal-500/50 resize-none font-mono text-sm leading-relaxed min-h-[300px]"
+              className="flex-1 w-full px-3 py-2 bg-slate-900/50 border border-slate-600/30 rounded-lg text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 resize-none font-mono text-sm leading-relaxed min-h-[300px]"
             />
           </div>
 
@@ -214,7 +214,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
                     onChange={(e) => setHeaderKey(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Clave"
-                    className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/50 text-sm"
+                    className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 text-sm"
                   />
                   <input
                     type="text"
@@ -222,7 +222,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
                     onChange={(e) => setHeaderValue(e.target.value)}
                     onKeyPress={handleKeyPress}
                     placeholder="Valor"
-                    className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-teal-500/50 text-sm"
+                    className="flex-1 px-3 py-2 bg-slate-700/50 border border-slate-600/50 rounded text-white placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-cyan-500/50 text-sm"
                   />
                   <Button
                     type="button"
@@ -230,7 +230,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
                     disabled={!headerKey.trim() || !headerValue.trim()}
                     size="sm"
                     variant="ghost"
-                    className="text-teal-400 hover:text-teal-300 hover:bg-teal-500/20 disabled:opacity-30 h-9 w-9 p-0"
+                    className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20 disabled:opacity-30 h-9 w-9 p-0"
                   >
                     <Plus className="h-4 w-4" />
                   </Button>
@@ -242,7 +242,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
                     {Object.entries(messageData.headers).map(([key, value]) => (
                       <div key={key} className="flex items-center justify-between bg-slate-700/50 px-2 py-1 rounded text-xs">
                         <span className="text-white font-mono truncate">
-                          <span className="text-teal-400">{key}:</span> {value}
+                          <span className="text-cyan-400">{key}:</span> {value}
                         </span>
                         <Button
                           type="button"
@@ -277,7 +277,7 @@ export function SendMessageModal({ queue, isOpen, onClose, onSend }: SendMessage
               onClick={handleSend}
               disabled={!messageData.body.trim()}
               size="sm"
-              className="bg-teal-600 hover:bg-teal-700 text-white disabled:opacity-30"
+              className="bg-cyan-600 hover:bg-cyan-700 text-white disabled:opacity-30"
             >
               <Send className="h-3 w-3 mr-1" />
               Enviar

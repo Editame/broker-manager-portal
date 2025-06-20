@@ -50,10 +50,10 @@ export function QueueRow({
 
   return (
     <div
-      className={`group cursor-pointer transition-all duration-150 hover:bg-slate-700/40 ${
+      className={`group cursor-pointer transition-all duration-150 hover:bg-slate-100/60 ${
         isSelected
-          ? 'bg-emerald-500/10 border-l-2 border-l-emerald-500'
-          : 'border-l-2 border-l-transparent hover:border-l-emerald-500/50'
+          ? 'bg-blue-50 border-l-2 border-l-blue-500'
+          : 'border-l-2 border-l-transparent hover:border-l-blue-500/50'
       }`}
       onClick={() => onSelect(queue)}
     >
@@ -72,41 +72,40 @@ export function QueueRow({
             {/* Nombre de la Cola */}
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
-                <h3 className="font-medium text-white truncate text-sm">
+                <h3 className="font-medium text-slate-800 truncate text-sm">
                   {queue.name}
                 </h3>
                 {hasConsumers && (
-                  <span className="text-xs bg-blue-500/20 text-blue-300 px-1.5 py-0.5 rounded border border-blue-500/30">
+                  <span className="text-xs bg-blue-500/20 text-blue-700 px-1.5 py-0.5 rounded border border-blue-500/30">
                     Activa
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Métricas Compactas con Iconos */}
-            <div className="flex items-center gap-4 text-xs text-slate-400 flex-shrink-0">
+            <div className="flex items-center gap-4 text-xs text-slate-600 flex-shrink-0">
               {/* Mensajes */}
               <div className="flex items-center gap-1">
-                <MessageCircle className="h-3 w-3 text-teal-400" />
-                <span className="text-white font-medium">{queue.queueSize}</span>
+                <MessageCircle className="h-3 w-3 text-cyan-500" />
+                <span className="text-slate-800 font-medium">{queue.queueSize}</span>
               </div>
               
               {/* Consumidores */}
               <div className="flex items-center gap-1">
-                <Users className="h-3 w-3 text-emerald-400" />
-                <span className="text-white font-medium">{queue.consumerCount}</span>
+                <Users className="h-3 w-3 text-blue-500" />
+                <span className="text-slate-800 font-medium">{queue.consumerCount}</span>
               </div>
               
               {/* Enqueue/Dequeue con iconos de flechas */}
               <div className="flex items-center gap-1 font-mono">
                 <div className="flex items-center gap-0.5">
-                  <TrendingUp className="h-3 w-3 text-emerald-400" />
-                  <span className="text-emerald-400 font-medium">{queue.enqueueCount}</span>
+                  <TrendingUp className="h-3 w-3 text-emerald-500" />
+                  <span className="text-emerald-600 font-medium">{queue.enqueueCount}</span>
                 </div>
-                <span className="text-slate-500">/</span>
+                <span className="text-slate-400">/</span>
                 <div className="flex items-center gap-0.5">
-                  <TrendingDown className="h-3 w-3 text-red-400" />
-                  <span className="text-red-400 font-medium">{queue.dequeueCount}</span>
+                  <TrendingDown className="h-3 w-3 text-red-500" />
+                  <span className="text-red-600 font-medium">{queue.dequeueCount}</span>
                 </div>
               </div>
             </div>
@@ -125,7 +124,7 @@ export function QueueRow({
                       e.stopPropagation();
                       onSendMessage(queue);
                     }}
-                    className="h-6 w-6 p-0 text-teal-400 hover:text-teal-300 hover:bg-teal-500/20 transition-all duration-150"
+                    className="h-6 w-6 p-0 text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20 transition-all duration-150"
                   >
                     <Send className="h-3 w-3" />
                   </Button>

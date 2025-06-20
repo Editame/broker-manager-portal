@@ -43,7 +43,7 @@ export function MessageViewer({ message, isOpen, onClose }: MessageViewerProps) 
         <DialogHeader className="border-b border-slate-700 pb-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-teal-400" />
+              <MessageCircle className="h-4 w-4 text-cyan-400" />
               <DialogTitle className="text-white text-lg">
                 Mensaje
               </DialogTitle>
@@ -100,7 +100,7 @@ export function MessageViewer({ message, isOpen, onClose }: MessageViewerProps) 
                 onClick={() => copyToClipboard(message.body)}
                 size="sm"
                 variant="ghost"
-                className="text-teal-400 hover:text-teal-300 hover:bg-teal-500/20 text-xs h-7"
+                className="text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/20 text-xs h-7"
               >
                 <Copy className="h-3 w-3 mr-1" />
                 Copiar
@@ -129,7 +129,7 @@ export function MessageViewer({ message, isOpen, onClose }: MessageViewerProps) 
                   <div className="space-y-1">
                     {Object.entries(message.headers).map(([key, value]) => (
                       <div key={key} className="flex items-start gap-2 text-xs">
-                        <span className="text-teal-400 font-medium min-w-0 flex-shrink-0">
+                        <span className="text-cyan-400 font-medium min-w-0 flex-shrink-0">
                           {key}:
                         </span>
                         <span className="text-slate-200 font-mono break-all">

@@ -130,22 +130,22 @@ export default function HomePage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-slate-900">
+      <div className="min-h-screen bg-slate-50">
         {/* Header Mejorado */}
-        <header className="bg-gradient-to-r from-slate-800 to-slate-750 shadow-lg border-b border-slate-700">
+        <header className="bg-gradient-to-r from-slate-200 to-slate-100 shadow-lg border-b border-slate-300">
           <div className="max-w-full mx-auto px-6">
             <div className="flex items-center justify-between h-14">
               {/* Logo y Título */}
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="bg-emerald-500/20 p-2 rounded-lg border border-emerald-500/30">
-                    <RefreshCcw className="h-5 w-5 text-emerald-400" />
+                  <div className="bg-blue-500/20 p-2 rounded-lg border border-blue-500/30">
+                    <RefreshCcw className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-white tracking-tight">
+                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">
                       Broker Manager
                     </h1>
-                    <p className="text-xs text-slate-400 font-medium">
+                    <p className="text-xs text-slate-600 font-medium">
                       ActiveMQ Administration
                     </p>
                   </div>
@@ -157,14 +157,14 @@ export default function HomePage() {
                 {/* Métricas Compactas */}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-400">Colas:</span>
-                    <span className="bg-emerald-500/20 text-emerald-300 px-2 py-1 rounded-full font-semibold border border-emerald-500/30">
+                    <span className="text-slate-600">Colas:</span>
+                    <span className="bg-blue-500/20 text-blue-700 px-2 py-1 rounded-full font-semibold border border-blue-500/30">
                       {queues.length}
                     </span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse"></div>
-                    <span className="text-emerald-400 font-semibold">Activo</span>
+                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                    <span className="text-blue-600 font-semibold">Activo</span>
                   </div>
                 </div>
 
@@ -173,7 +173,7 @@ export default function HomePage() {
                   variant="ghost"
                   onClick={refetchQueues}
                   disabled={queuesLoading}
-                  className="bg-slate-700/50 border border-slate-600/50 text-slate-200 hover:bg-slate-600 hover:text-white font-medium transition-all duration-200 px-4"
+                  className="bg-slate-200/50 border border-slate-300/50 text-slate-700 hover:bg-slate-300 hover:text-slate-800 font-medium transition-all duration-200 px-4"
                 >
                   <RefreshCcw className={`h-4 w-4 mr-2 ${queuesLoading ? 'animate-spin' : ''}`} />
                   Actualizar
@@ -195,7 +195,7 @@ export default function HomePage() {
             {/* Main Layout: Lista de Colas + Panel de Mensajes */}
             <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
               {/* Lista de Colas - Columna Izquierda */}
-              <div className="col-span-5 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-lg">
+              <div className="col-span-5 bg-white rounded-lg border border-slate-300 overflow-hidden shadow-lg">
                 {queuesLoading ? (
                   <div className="p-4">
                     <LoadingSpinner count={8} />
@@ -219,7 +219,7 @@ export default function HomePage() {
               </div>
 
               {/* Panel de Mensajes - Columna Derecha */}
-              <div className="col-span-7 bg-slate-800 rounded-lg border border-slate-700 overflow-hidden shadow-lg">
+              <div className="col-span-7 bg-white rounded-lg border border-slate-300 overflow-hidden shadow-lg">
                 <MessagePanel
                   queue={selectedQueue}
                   messages={messages}

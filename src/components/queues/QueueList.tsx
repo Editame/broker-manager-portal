@@ -50,17 +50,17 @@ export function QueueList({
     return (
       <div className="flex flex-col h-full">
         {/* Header Compacto */}
-        <div className="border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-750">
+        <div className="border-b border-slate-300 bg-gradient-to-r from-slate-100 to-slate-50">
           <div className="p-3">
             <div className="flex items-center gap-2">
-              <div className="bg-emerald-500/20 p-1.5 rounded border border-emerald-500/30">
-                <Database className="h-4 w-4 text-emerald-400" />
+              <div className="bg-blue-500/20 p-1.5 rounded border border-blue-500/30">
+                <Database className="h-4 w-4 text-blue-600" />
               </div>
               <div>
-                <h2 className="font-semibold text-white">
+                <h2 className="font-semibold text-slate-800">
                   Colas del Broker
                 </h2>
-                <p className="text-xs text-slate-400">
+                <p className="text-xs text-slate-600">
                   {queues.length} colas disponibles
                 </p>
               </div>
@@ -101,8 +101,8 @@ export function QueueList({
           {/* Título y Contador */}
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <div className="bg-emerald-500/20 p-1.5 rounded border border-emerald-500/30">
-                <Database className="h-4 w-4 text-emerald-400" />
+              <div className="bg-blue-500/20 p-1.5 rounded border border-blue-500/30">
+                <Database className="h-4 w-4 text-blue-400" />
               </div>
               <div>
                 <h2 className="font-semibold text-white">
@@ -126,16 +126,16 @@ export function QueueList({
           {/* Métricas Compactas en una línea */}
           <div className="flex items-center gap-4 text-xs">
             <div className="flex items-center gap-1">
-              <span className="text-slate-400">Mensajes:</span>
-              <span className="text-white font-medium">{totalMessages.toLocaleString()}</span>
+              <span className="text-slate-600">Mensajes:</span>
+              <span className="text-slate-800 font-medium">{totalMessages.toLocaleString()}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-slate-400">Consumidores:</span>
-              <span className="text-white font-medium">{totalConsumers}</span>
+              <span className="text-slate-600">Consumidores:</span>
+              <span className="text-slate-800 font-medium">{totalConsumers}</span>
             </div>
             <div className="flex items-center gap-1">
-              <span className="text-slate-400">Activas:</span>
-              <span className="text-emerald-400 font-medium">{activeQueues}</span>
+              <span className="text-slate-600">Activas:</span>
+              <span className="text-blue-600 font-medium">{activeQueues}</span>
             </div>
           </div>
         </div>
