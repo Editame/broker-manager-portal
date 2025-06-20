@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 // Hooks
 import { useQueues } from '@/hooks/useQueues';
 import { useMessages } from '@/hooks/useMessages';
+import { useBrokerMetrics } from '@/hooks/useBrokerMetrics';
 
 // Components
 import { QueueFilters } from '@/components/queues/QueueFilters';
@@ -23,9 +24,13 @@ import { QueueInfo, QueueFilters as QueueFiltersType } from '@/types/queue';
 import { Message } from '@/types/message';
 import { sendMessage, deleteMessage } from '@/lib/api/service';
 
+// Styles
 import '@/app/globals.css';
 
 export default function HomePage() {
+  // Broker metrics
+  const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useBrokerMetrics();
+  
   // Queue management
   const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues();
   const { messages, loading: messagesLoading, error: messagesError, loadMessages, clearMessages } = useMessages();
@@ -58,6 +63,14 @@ export default function HomePage() {
     if (selectedQueue) {
       loadMessages(selectedQueue.name);
     }
+  };
+
+  const handleRefreshAll = async () => {
+    await Promise.all([
+      refetchQueues(),
+      refetchMetrics(),
+      selectedQueue ? loadMessages(selectedQueue.name) : Promise.resolve()
+    ]);
   };
 
   const handleSendMessage = (queue: QueueInfo) => {
@@ -156,19 +169,27 @@ export default function HomePage() {
                   <div className="flex items-center gap-4">
                     <div className="text-center">
                       <div className="text-xs text-slate-500">CPU</div>
-                      <div className="font-semibold text-slate-700">45%</div>
+                      <div className="font-semibold text-slate-700">
+                        {metricsLoading ? '...' : `${metrics?.cpuUsage?.toFixed(1) || '0.0'}%`}
+                      </div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-slate-500">RAM</div>
-                      <div className="font-semibold text-slate-700">2.1GB</div>
+                      <div className="font-semibold text-slate-700">
+                        {metricsLoading ? '...' : `${((metrics?.memoryUsage || 0) / 1024 / 1024 / 1024).toFixed(1)}GB`}
+                      </div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-slate-500">Conexiones</div>
-                      <div className="font-semibold text-slate-700">23</div>
+                      <div className="font-semibold text-slate-700">
+                        {metricsLoading ? '...' : metrics?.activeConnections || '0'}
+                      </div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-slate-500">Uptime</div>
-                      <div className="font-semibold text-slate-700">5d 3h</div>
+                      <div className="font-semibold text-slate-700">
+                        {metricsLoading ? '...' : metrics?.uptimeFormatted || '0m'}
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -190,13 +211,13 @@ export default function HomePage() {
                 {/* Actualizar Sutil */}
                 <Button
                   variant="ghost"
-                  onClick={refetchQueues}
-                  disabled={queuesLoading}
+                  onClick={handleRefreshAll}
+                  disabled={queuesLoading || metricsLoading}
                   size="sm"
                   className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
                   title="Actualizar datos"
                 >
-                  <RefreshCcw className={`h-4 w-4 ${queuesLoading ? 'animate-spin' : ''}`} />
+                  <RefreshCcw className={`h-4 w-4 ${(queuesLoading || metricsLoading) ? 'animate-spin' : ''}`} />
                 </Button>
 
                 {/* Logout/Perfil */}

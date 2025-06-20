@@ -9,8 +9,9 @@ export async function fetchQueues(): Promise<QueueInfo[]> {
         if (!res.ok) {
             throw new Error(`HTTP error! status: ${res.status}`);
         }
-        const data: BrokerQueuesResponse = await res.json();
-        return data.queues;
+        const data = await res.json();
+        // El backend devuelve directamente un array, no un objeto con propiedad queues
+        return Array.isArray(data) ? data : data.queues || [];
     } catch (error) {
         console.error('Error fetching queues:', error);
         throw new Error('No se pudieron obtener las colas del broker');
