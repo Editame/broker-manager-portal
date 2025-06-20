@@ -50,9 +50,9 @@ export function QueueRow({
 
   return (
     <div
-      className={`group cursor-pointer transition-all duration-150 hover:bg-slate-100/60 ${
+      className={`group cursor-pointer transition-all duration-150 hover:bg-slate-100/80 ${
         isSelected
-          ? 'bg-blue-50 border-l-2 border-l-blue-500'
+          ? 'bg-blue-50/80 border-l-2 border-l-blue-500'
           : 'border-l-2 border-l-transparent hover:border-l-blue-500/50'
       }`}
       onClick={() => onSelect(queue)}

@@ -130,53 +130,85 @@ export default function HomePage() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-slate-50">
-        {/* Header Mejorado */}
-        <header className="bg-gradient-to-r from-slate-200 to-slate-100 shadow-lg border-b border-slate-300">
+      <div className="min-h-screen bg-slate-100">
+        {/* Header con Métricas del Broker */}
+        <header className="bg-white shadow-sm border-b border-slate-200">
           <div className="max-w-full mx-auto px-6">
-            <div className="flex items-center justify-between h-14">
+            <div className="flex items-center justify-between h-16">
               {/* Logo y Título */}
-              <div className="flex items-center gap-4">
+              <div className="flex items-center gap-6">
                 <div className="flex items-center gap-3">
-                  <div className="bg-blue-500/20 p-2 rounded-lg border border-blue-500/30">
+                  <div className="bg-blue-500/10 p-2 rounded-lg border border-blue-500/20">
                     <RefreshCcw className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <h1 className="text-xl font-bold text-slate-800 tracking-tight">
+                    <h1 className="text-lg font-bold text-slate-800 tracking-tight">
                       Broker Manager
                     </h1>
-                    <p className="text-xs text-slate-600 font-medium">
+                    <p className="text-xs text-slate-500 font-medium">
                       ActiveMQ Administration
                     </p>
                   </div>
                 </div>
+
+                {/* Métricas del Broker */}
+                <div className="hidden md:flex items-center gap-6 text-sm">
+                  <div className="flex items-center gap-4">
+                    <div className="text-center">
+                      <div className="text-xs text-slate-500">CPU</div>
+                      <div className="font-semibold text-slate-700">45%</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-slate-500">RAM</div>
+                      <div className="font-semibold text-slate-700">2.1GB</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-slate-500">Conexiones</div>
+                      <div className="font-semibold text-slate-700">23</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-slate-500">Uptime</div>
+                      <div className="font-semibold text-slate-700">5d 3h</div>
+                    </div>
+                  </div>
+                </div>
               </div>
 
-              {/* Métricas y Controles */}
-              <div className="flex items-center gap-4">
-                {/* Métricas Compactas */}
+              {/* Controles Sutiles */}
+              <div className="flex items-center gap-3">
+                {/* Estado y Colas */}
                 <div className="flex items-center gap-4 text-sm">
                   <div className="flex items-center gap-2">
-                    <span className="text-slate-600">Colas:</span>
-                    <span className="bg-blue-500/20 text-blue-700 px-2 py-1 rounded-full font-semibold border border-blue-500/30">
-                      {queues.length}
-                    </span>
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-slate-600">Activo</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-blue-600 font-semibold">Activo</span>
+                  <div className="text-slate-500">
+                    <span className="font-medium text-slate-700">{queues.length}</span> colas
                   </div>
                 </div>
 
-                {/* Botón de Actualizar */}
+                {/* Actualizar Sutil */}
                 <Button
                   variant="ghost"
                   onClick={refetchQueues}
                   disabled={queuesLoading}
-                  className="bg-slate-200/50 border border-slate-300/50 text-slate-700 hover:bg-slate-300 hover:text-slate-800 font-medium transition-all duration-200 px-4"
+                  size="sm"
+                  className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
+                  title="Actualizar datos"
                 >
-                  <RefreshCcw className={`h-4 w-4 mr-2 ${queuesLoading ? 'animate-spin' : ''}`} />
-                  Actualizar
+                  <RefreshCcw className={`h-4 w-4 ${queuesLoading ? 'animate-spin' : ''}`} />
+                </Button>
+
+                {/* Logout/Perfil */}
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
+                  title="Perfil"
+                >
+                  <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
                 </Button>
               </div>
             </div>
@@ -193,9 +225,9 @@ export default function HomePage() {
             />
 
             {/* Main Layout: Lista de Colas + Panel de Mensajes */}
-            <div className="grid grid-cols-12 gap-4 h-[calc(100vh-200px)]">
+            <div className="grid grid-cols-12 gap-4 h-[calc(100vh-180px)]">
               {/* Lista de Colas - Columna Izquierda */}
-              <div className="col-span-5 bg-white rounded-lg border border-slate-300 overflow-hidden shadow-lg">
+              <div className="col-span-5 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                 {queuesLoading ? (
                   <div className="p-4">
                     <LoadingSpinner count={8} />
@@ -219,7 +251,7 @@ export default function HomePage() {
               </div>
 
               {/* Panel de Mensajes - Columna Derecha */}
-              <div className="col-span-7 bg-white rounded-lg border border-slate-300 overflow-hidden shadow-lg">
+              <div className="col-span-7 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
                 <MessagePanel
                   queue={selectedQueue}
                   messages={messages}

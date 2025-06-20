@@ -50,10 +50,10 @@ export function QueueList({
     return (
       <div className="flex flex-col h-full">
         {/* Header Compacto */}
-        <div className="border-b border-slate-300 bg-gradient-to-r from-slate-100 to-slate-50">
+        <div className="border-b border-slate-200 bg-white">
           <div className="p-3">
             <div className="flex items-center gap-2">
-              <div className="bg-blue-500/20 p-1.5 rounded border border-blue-500/30">
+              <div className="bg-blue-500/10 p-1.5 rounded border border-blue-500/20">
                 <Database className="h-4 w-4 text-blue-600" />
               </div>
               <div>

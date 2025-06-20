@@ -152,7 +152,7 @@ export function MessagePanel({
   return (
     <div className="flex flex-col h-full">
       {/* Header Compacto y Mejorado */}
-      <div className="border-b border-slate-300 bg-gradient-to-r from-slate-100 to-slate-50">
+      <div className="border-b border-slate-200 bg-white">
         <div className="flex items-center justify-between p-3">
           {/* Título y Contador */}
           <div className="flex items-center gap-3">
@@ -163,11 +163,11 @@ export function MessagePanel({
               </h3>
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-xs bg-cyan-500/20 text-cyan-700 px-2 py-1 rounded-full font-medium border border-cyan-500/30">
+              <span className="text-xs bg-cyan-500/10 text-cyan-700 px-2 py-1 rounded-full font-medium border border-cyan-500/20">
                 {filteredAndSortedMessages.length}/{messages.length}
               </span>
               {bodyFilter && (
-                <span className="text-xs bg-amber-500/20 text-amber-700 px-2 py-1 rounded-full font-medium border border-amber-500/30">
+                <span className="text-xs bg-amber-500/10 text-amber-700 px-2 py-1 rounded-full font-medium border border-amber-500/20">
                   filtrado: "{bodyFilter}"
                 </span>
               )}
@@ -181,7 +181,7 @@ export function MessagePanel({
               size="sm"
               onClick={onRefresh}
               disabled={loading}
-              className="text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 transition-all duration-200"
+              className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
               title="Actualizar mensajes"
             >
               <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
@@ -191,7 +191,7 @@ export function MessagePanel({
                 variant="ghost"
                 size="sm"
                 onClick={downloadAllMessages}
-                className="text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 transition-all duration-200"
+                className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
                 title="Descargar mensajes"
               >
                 <Download className="h-4 w-4" />
@@ -205,18 +205,18 @@ export function MessagePanel({
           <div className="flex items-center gap-2">
             {/* Filtro por contenido del body */}
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-500" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
               <input
                 type="text"
                 placeholder="Buscar en contenido de mensajes..."
                 value={bodyFilter}
                 onChange={(e) => setBodyFilter(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-white border border-slate-300 rounded-lg text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200 text-sm"
+                className="w-full pl-10 pr-10 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50 focus:border-cyan-500/50 transition-all duration-200 text-sm"
               />
               {bodyFilter && (
                 <button
                   onClick={clearBodyFilter}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-500 hover:text-slate-700 transition-colors"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors"
                 >
                   <X className="h-4 w-4" />
                 </button>
@@ -228,7 +228,7 @@ export function MessagePanel({
               variant="ghost"
               size="sm"
               onClick={handleSortToggle}
-              className="text-slate-600 hover:text-slate-800 hover:bg-slate-200/50 transition-all duration-200 px-3 border border-slate-300 rounded-lg"
+              className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200 px-3 border border-slate-200 rounded-lg"
               title={getSortLabel()}
             >
               {getSortIcon()}
