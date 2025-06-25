@@ -48,11 +48,48 @@ export function QueueList({
     return <ArrowUpDown className="h-3 w-3" />;
   };
 
+  /**
+   * Convierte un patrón con wildcards (*) a expresión regular
+   * Ejemplos:
+   * - "purchase-orders*" → /^purchase-orders.*$/i
+   * - "*error*" → /^.*error.*$/i  
+   * - "purchase-orders*error*" → /^purchase-orders.*error.*$/i
+   */
+  const createPatternRegex = (pattern: string): RegExp | null => {
+    try {
+      // Si no contiene *, es búsqueda simple (mantener comportamiento actual)
+      if (!pattern.includes('*')) {
+        return null;
+      }
+      
+      // Escapar caracteres especiales de regex excepto *
+      const escapedPattern = pattern
+        .replace(/[.+?^${}()|[\]\\]/g, '\\$&') // Escapar caracteres especiales
+        .replace(/\*/g, '.*'); // Convertir * a .*
+      
+      // Crear regex con anchors para coincidencia completa
+      return new RegExp(`^${escapedPattern}$`, 'i');
+    } catch (error) {
+      console.warn('Error creando patrón regex:', error);
+      return null;
+    }
+  };
+
   const filteredAndSortedQueues = useMemo(() => {
     // Primero filtrar
     let filtered = queues.filter((queue) => {
-      const matchesGeneral = !filters.general || 
-        queue.name.toLowerCase().includes(filters.general.toLowerCase());
+      // Filtro general con soporte para patrones
+      let matchesGeneral = true;
+      if (filters.general) {
+        const patternRegex = createPatternRegex(filters.general);
+        if (patternRegex) {
+          // Usar patrón con wildcards
+          matchesGeneral = patternRegex.test(queue.name);
+        } else {
+          // Búsqueda simple (comportamiento original)
+          matchesGeneral = queue.name.toLowerCase().includes(filters.general.toLowerCase());
+        }
+      }
       
       const matchesPrefix = !filters.prefix || 
         queue.name.toLowerCase().startsWith(filters.prefix.toLowerCase());

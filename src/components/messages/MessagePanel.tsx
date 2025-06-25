@@ -1,8 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { Message } from '@/types/message';
 import { QueueInfo } from '@/types/queue';
 import { Button } from '@/components/ui/Button';
-import { Eye, Download, RefreshCcw, MessageSquare, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, X } from 'lucide-react';
+import { Eye, Download, RefreshCcw, MessageSquare, Search, ArrowUpDown, ArrowUp, ArrowDown, Trash2, X, Clock, ChevronDown } from 'lucide-react';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
 
@@ -29,6 +29,97 @@ export function MessagePanel({
 }: MessagePanelProps) {
   const [bodyFilter, setBodyFilter] = useState('');
   const [sortOrder, setSortOrder] = useState<SortOrder>('none');
+  
+  // Auto-refresh state
+  const [autoRefreshInterval, setAutoRefreshInterval] = useState<number>(45); // Default 45s
+  const [showRefreshDropdown, setShowRefreshDropdown] = useState(false);
+  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const lastRefreshRef = useRef<number>(Date.now());
+
+  // Auto-refresh logic
+  useEffect(() => {
+    const startAutoRefresh = () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+      
+      if (queue && autoRefreshInterval > 0) {
+        intervalRef.current = setInterval(() => {
+          onRefresh();
+          lastRefreshRef.current = Date.now();
+        }, autoRefreshInterval * 1000);
+      }
+    };
+
+    startAutoRefresh();
+
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, [queue, autoRefreshInterval, onRefresh]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+      }
+    };
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (showRefreshDropdown) {
+        const target = event.target as Element;
+        if (!target.closest('.relative')) {
+          setShowRefreshDropdown(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showRefreshDropdown]);
+
+  // Auto-refresh options
+  const refreshOptions = [
+    { label: '3s', value: 3 },
+    { label: '5s', value: 5 },
+    { label: '10s', value: 10 },
+    { label: 'None', value: 45 }, // None = 45s default
+  ];
+
+  const handleRefreshIntervalChange = (newInterval: number) => {
+    setAutoRefreshInterval(newInterval);
+    setShowRefreshDropdown(false);
+    lastRefreshRef.current = Date.now();
+  };
+
+  const handleManualRefresh = () => {
+    onRefresh();
+    lastRefreshRef.current = Date.now();
+    
+    // Reiniciar timer del auto-refresh
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      if (queue && autoRefreshInterval > 0) {
+        intervalRef.current = setInterval(() => {
+          onRefresh();
+          lastRefreshRef.current = Date.now();
+        }, autoRefreshInterval * 1000);
+      }
+    }
+  };
+
+  const getCurrentRefreshLabel = () => {
+    const option = refreshOptions.find(opt => opt.value === autoRefreshInterval);
+    return option ? option.label : `${autoRefreshInterval}s`;
+  };
 
   // Filtrar y ordenar mensajes
   const filteredAndSortedMessages = useMemo(() => {
@@ -176,16 +267,53 @@ export function MessagePanel({
 
           {/* Controles de Acción */}
           <div className="flex items-center gap-2">
+            {/* Botón de refresh manual */}
             <Button
               variant="ghost"
               size="sm"
-              onClick={onRefresh}
+              onClick={handleManualRefresh}
               disabled={loading}
               className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
               title="Actualizar mensajes"
             >
               <RefreshCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
             </Button>
+            
+            {/* Selector de auto-refresh */}
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowRefreshDropdown(!showRefreshDropdown)}
+                className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200 flex items-center gap-1"
+                title={`Auto-refresh: ${getCurrentRefreshLabel()}`}
+              >
+                <Clock className="h-4 w-4" />
+                <span className="text-xs font-medium">{getCurrentRefreshLabel()}</span>
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+              
+              {showRefreshDropdown && (
+                <div className="absolute top-full right-0 mt-1 w-20 bg-white border border-slate-200 rounded-md shadow-lg z-50">
+                  <div className="py-1">
+                    {refreshOptions.map((option) => (
+                      <button
+                        key={option.value}
+                        onClick={() => handleRefreshIntervalChange(option.value)}
+                        className={`w-full px-3 py-2 text-left text-sm hover:bg-slate-50 transition-colors ${
+                          autoRefreshInterval === option.value 
+                            ? 'bg-blue-50 text-blue-700 font-medium' 
+                            : 'text-slate-700'
+                        }`}
+                      >
+                        {option.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
             {messages.length > 0 && (
               <Button
                 variant="ghost"
@@ -248,7 +376,7 @@ export function MessagePanel({
           </div>
         ) : error ? (
           <div className="p-4">
-            <ErrorMessage message={error} onRetry={onRefresh} />
+            <ErrorMessage message={error} onRetry={handleManualRefresh} />
           </div>
         ) : filteredAndSortedMessages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center p-8">

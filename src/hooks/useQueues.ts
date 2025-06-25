@@ -31,6 +31,10 @@ export function useQueues(enabled: boolean = true) {
   useEffect(() => {
     if (enabled) {
       loadQueues();
+    } else {
+      // Limpiar datos cuando no está habilitado
+      setQueues([]);
+      setLoadingState({ loading: false, error: null });
     }
   }, [enabled, loadQueues]);
 

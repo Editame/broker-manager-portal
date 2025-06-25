@@ -20,7 +20,7 @@ import { MessageViewer } from '@/components/messages/MessageViewer';
 import { SendMessageModal, SendMessageData } from '@/components/messages/SendMessageModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
-import { ConnectionStatus } from '@/components/connections/ConnectionStatus';
+import { BrokerSelector } from '@/components/connections/BrokerSelector';
 import { ConnectionModal } from '@/components/connections/ConnectionModal';
 
 // Types
@@ -33,10 +33,19 @@ import '@/app/globals.css';
 
 export default function HomePage() {
   // Connection management
-  const { activeConnection, loading: connectionsLoading } = useConnections();
+  const { 
+    activeConnection, 
+    isUserConnected,
+    loading: connectionsLoading,
+    connectionMessage,
+    connectToConnection,
+    disconnect,
+    clearConnectionMessage,
+    refetch: refetchConnections
+  } = useConnections();
   
-  // Broker metrics - VERSIÓN ULTRA SEGURA
-  const metricsHookResult = useBrokerMetrics(!!activeConnection);
+  // Broker metrics - SOLO cuando el usuario está conectado
+  const metricsHookResult = useBrokerMetrics(isUserConnected);
   
   // DEBUG: Log para ver qué está retornando el hook
   console.log('metricsHookResult:', metricsHookResult);
@@ -50,8 +59,8 @@ export default function HomePage() {
   // DEBUG: Log para ver los valores extraídos
   console.log('metricsLoading:', metricsLoading, 'type:', typeof metricsLoading);
   
-  // Queue management - solo si hay conexión activa
-  const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues(!!activeConnection);
+  // Queue management - SOLO cuando el usuario está conectado
+  const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues(isUserConnected);
   const { messages, loading: messagesLoading, error: messagesError, loadMessages, clearMessages } = useMessages();
 
   // UI State
@@ -139,11 +148,20 @@ export default function HomePage() {
     setShowConnectionModal(false);
   };
 
-  const handleConnectionChange = () => {
-    // Refrescar datos cuando cambie la conexión
-    if (activeConnection) {
-      refetchQueues();
-      refetchMetrics();
+  const handleBrokerChange = async () => {
+    // Refrescar todos los datos cuando cambie el broker
+    try {
+      // Primero refrescar las conexiones para obtener la nueva conexión activa
+      await refetchConnections();
+      
+      // Luego refrescar los datos del broker con un pequeño delay
+      setTimeout(() => {
+        refetchQueues();
+        refetchMetrics();
+      }, 300);
+      
+    } catch (error) {
+      console.error('Error refreshing data after broker change:', error);
     }
   };
 
@@ -151,11 +169,19 @@ export default function HomePage() {
   useEffect(() => {
     if (!connectionsLoading) {
       setHasCheckedConnection(true);
-      if (!activeConnection) {
+      // Si no hay usuario conectado, abrir modal automáticamente
+      if (!isUserConnected) {
         setShowConnectionModal(true);
       }
     }
-  }, [activeConnection, connectionsLoading]);
+  }, [connectionsLoading, isUserConnected]);
+
+  // Cerrar modal cuando el usuario se conecte exitosamente
+  useEffect(() => {
+    if (isUserConnected && showConnectionModal) {
+      setShowConnectionModal(false);
+    }
+  }, [isUserConnected, showConnectionModal]);
 
   // Mostrar loading mientras se verifica la conexión
   if (!hasCheckedConnection) {
@@ -169,8 +195,8 @@ export default function HomePage() {
     );
   }
 
-  // Mostrar modal de conexión si no hay conexión activa
-  if (!activeConnection) {
+  // Mostrar modal de conexión si no hay conexiones disponibles O si no hay usuario conectado
+  if (!activeConnection && hasCheckedConnection) {
     return (
       <TooltipProvider>
         <div className="min-h-screen bg-slate-100 flex items-center justify-center">
@@ -184,8 +210,8 @@ export default function HomePage() {
           
           <ConnectionModal
             isOpen={showConnectionModal}
-            onClose={() => {}}
-            onConnectionChange={handleConnectionChange}
+            onClose={handleCloseConnectionModal}
+            onConnectionChange={handleBrokerChange}
             canClose={false}
           />
         </div>
@@ -285,7 +311,10 @@ export default function HomePage() {
               <div className="flex items-center gap-3">
                 {/* Estado de Conexión y Colas */}
                 <div className="flex items-center gap-4 text-sm">
-                  <ConnectionStatus onOpenSettings={handleOpenConnectionModal} />
+                  <BrokerSelector 
+                    onOpenSettings={handleOpenConnectionModal}
+                    onBrokerChange={handleBrokerChange}
+                  />
                   <div className="text-slate-500">
                     <span className="font-medium text-slate-700">{queues.length}</span> colas
                   </div>
@@ -318,6 +347,44 @@ export default function HomePage() {
             </div>
           </div>
         </header>
+
+        {/* Mensaje de Conexión */}
+        {connectionMessage && (
+          <div className="bg-green-50 border-l-4 border-green-400 p-4 mx-6 mt-4 rounded-r-lg">
+            <div className="flex items-center justify-between">
+              <p className="text-green-700 font-medium">{connectionMessage}</p>
+              <button
+                onClick={clearConnectionMessage}
+                className="text-green-500 hover:text-green-700 ml-4"
+              >
+                ✕
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Mensaje cuando no está conectado */}
+        {!isUserConnected && activeConnection && (
+          <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mx-6 mt-4 rounded-r-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-700 font-medium">
+                  Conexión disponible: "{activeConnection.name}"
+                </p>
+                <p className="text-blue-600 text-sm">
+                  Haz clic en "Configurar conexiones" para conectarte y comenzar a gestionar el broker.
+                </p>
+              </div>
+              <Button
+                onClick={() => setShowConnectionModal(true)}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+                size="sm"
+              >
+                Conectar
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Main Content */}
         <main className="max-w-full mx-auto px-6 py-4">
@@ -402,7 +469,7 @@ export default function HomePage() {
         <ConnectionModal
           isOpen={showConnectionModal}
           onClose={handleCloseConnectionModal}
-          onConnectionChange={handleConnectionChange}
+          onConnectionChange={handleBrokerChange}
           canClose={true}
         />
 

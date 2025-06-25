@@ -55,6 +55,11 @@ export function useBrokerMetrics(enabled: boolean = true) {
       // Actualizar métricas cada 30 segundos
       const interval = setInterval(fetchMetrics, 30000);
       return () => clearInterval(interval);
+    } else {
+      // Limpiar datos cuando no está habilitado
+      setMetrics(null);
+      setLoading(false);
+      setError(null);
     }
   }, [fetchMetrics, enabled]);
 

@@ -13,6 +13,7 @@ import {
   testConnectionConfig, 
   activateConnection 
 } from '@/lib/api/connections';
+import { useConnections } from '@/hooks/useConnections';
 
 interface ConnectionModalProps {
   isOpen: boolean;
@@ -22,6 +23,7 @@ interface ConnectionModalProps {
 }
 
 export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose = true }: ConnectionModalProps) {
+  const { connectToConnection } = useConnections();
   const [connections, setConnections] = useState<BrokerConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
@@ -164,6 +166,24 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
         newSet.delete(id);
         return newSet;
       });
+    }
+  };
+
+  const handleConnectToConnection = async (id: string) => {
+    try {
+      setLoading(true);
+      await connectToConnection(id);
+      await loadConnections();
+      onConnectionChange?.();
+      
+      // Cerrar modal después de conectar exitosamente
+      setTimeout(() => {
+        onClose();
+      }, 1500);
+    } catch (error) {
+      console.error('Error connecting to broker:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -312,6 +332,18 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
                         </div>
                         
                         <div className="flex items-center gap-2 ml-4">
+                          {/* Botón Conectar - Principal */}
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={() => handleConnectToConnection(connection.id)}
+                            disabled={loading}
+                            title="Conectar a este broker"
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                          >
+                            🔌 Conectar
+                          </Button>
+                          
                           <Button
                             variant="ghost"
                             size="sm"
