@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrokerConnection } from '@/types/connection';
 
 export function useConnections() {
@@ -6,9 +6,16 @@ export function useConnections() {
   const [activeConnection, setActiveConnection] = useState<BrokerConnection | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Ref para evitar peticiones duplicadas
+  const fetchingRef = useRef(false);
 
   const fetchConnections = useCallback(async () => {
+    // Evitar peticiones duplicadas
+    if (fetchingRef.current) return;
+    
     try {
+      fetchingRef.current = true;
       setLoading(true);
       setError(null);
       
@@ -29,6 +36,7 @@ export function useConnections() {
       setError('No se pudieron obtener las conexiones');
     } finally {
       setLoading(false);
+      fetchingRef.current = false;
     }
   }, []);
 

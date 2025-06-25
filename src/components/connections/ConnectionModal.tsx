@@ -2,11 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { X, Plus, Settings, Trash2, Play, CheckCircle, XCircle, Clock } from 'lucide-react';
+import { X, Plus, Settings, Trash2, Play, CheckCircle, XCircle, Clock, Edit } from 'lucide-react';
 import { BrokerConnection, CreateConnectionRequest, TestConnectionResponse } from '@/types/connection';
 import { 
   getAllConnections, 
   createConnection, 
+  updateConnection,
   deleteConnection, 
   testConnection, 
   testConnectionConfig, 
@@ -24,6 +25,7 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
   const [connections, setConnections] = useState<BrokerConnection[]>([]);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
+  const [editingConnection, setEditingConnection] = useState<BrokerConnection | null>(null);
   const [testingConnections, setTestingConnections] = useState<Set<string>>(new Set());
   
   // Form state
@@ -104,19 +106,31 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
     }
   };
 
-  const handleCreateConnection = async () => {
+  const handleSaveConnection = async () => {
     if (!validateForm()) return;
     
     try {
       setLoading(true);
-      await createConnection(formData);
+      
+      if (editingConnection) {
+        // Actualizar conexión existente
+        const updateData = {
+          ...formData,
+          active: editingConnection.active // Mantener el estado activo actual
+        };
+        await updateConnection(editingConnection.id, updateData);
+      } else {
+        // Crear nueva conexión
+        await createConnection(formData);
+      }
+      
       await loadConnections();
       setShowForm(false);
       resetForm();
       onConnectionChange?.();
     } catch (error) {
-      console.error('Error creating connection:', error);
-      setFormErrors({ general: 'Error al crear la conexión' });
+      console.error(`Error ${editingConnection ? 'updating' : 'creating'} connection:`, error);
+      setFormErrors({ general: `Error al ${editingConnection ? 'actualizar' : 'crear'} la conexión` });
     } finally {
       setLoading(false);
     }
@@ -178,6 +192,29 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
     });
     setFormErrors({});
     setTestResult(null);
+    setEditingConnection(null);
+  };
+
+  const handleEditConnection = (connection: BrokerConnection) => {
+    setEditingConnection(connection);
+    setFormData({
+      name: connection.name,
+      host: connection.host,
+      port: connection.port,
+      username: connection.username || '',
+      password: '', // No mostrar la contraseña por seguridad
+      environment: connection.environment,
+      description: connection.description || ''
+    });
+    setFormErrors({});
+    setTestResult(null);
+    setShowForm(true);
+  };
+
+  const handleCancelEdit = () => {
+    setEditingConnection(null);
+    setShowForm(false);
+    resetForm();
   };
 
   const getStatusIcon = (status: string) => {
@@ -301,6 +338,17 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
                           <Button
                             variant="ghost"
                             size="sm"
+                            onClick={() => handleEditConnection(connection)}
+                            disabled={loading}
+                            title="Editar conexión"
+                            className="text-blue-600 hover:text-blue-700"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleDeleteConnection(connection.id)}
                             disabled={connection.active || loading}
                             title="Eliminar conexión"
@@ -319,8 +367,10 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
             /* Add Connection Form */
             <div className="space-y-6">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold text-gray-900">Nueva Conexión</h3>
-                <Button variant="ghost" onClick={() => { setShowForm(false); resetForm(); }}>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  {editingConnection ? 'Editar Conexión' : 'Nueva Conexión'}
+                </h3>
+                <Button variant="ghost" onClick={handleCancelEdit}>
                   <X className="h-4 w-4" />
                 </Button>
               </div>
@@ -415,6 +465,11 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="••••••••"
                   />
+                  {editingConnection && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      Deja vacío para mantener la contraseña actual
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -447,6 +502,17 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
                 </div>
               )}
 
+              {editingConnection?.active && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                    <span className="text-sm text-green-800">
+                      Esta conexión está actualmente activa. Los cambios se aplicarán inmediatamente.
+                    </span>
+                  </div>
+                </div>
+              )}
+
               {formErrors.general && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-md">
                   <p className="text-red-800">{formErrors.general}</p>
@@ -466,17 +532,20 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
                 </Button>
                 
                 <Button
-                  onClick={handleCreateConnection}
+                  onClick={handleSaveConnection}
                   disabled={loading || testingForm}
                   className="flex items-center gap-2"
                 >
-                  <Plus className="h-4 w-4" />
-                  {loading ? 'Creando...' : 'Crear Conexión'}
+                  {editingConnection ? <Edit className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                  {loading 
+                    ? (editingConnection ? 'Actualizando...' : 'Creando...') 
+                    : (editingConnection ? 'Actualizar Conexión' : 'Crear Conexión')
+                  }
                 </Button>
                 
                 <Button
                   variant="ghost"
-                  onClick={() => { setShowForm(false); resetForm(); }}
+                  onClick={handleCancelEdit}
                   disabled={loading || testingForm}
                 >
                   Cancelar

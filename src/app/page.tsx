@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
-import { RefreshCcw } from 'lucide-react';
+import { RefreshCcw, Database } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 // Hooks
@@ -10,6 +10,7 @@ import { useQueues } from '@/hooks/useQueues';
 import { useMessages } from '@/hooks/useMessages';
 import { useBrokerMetrics } from '@/hooks/useBrokerMetrics';
 import { useConnections } from '@/hooks/useConnections';
+import { useDebounce } from '@/hooks/useDebounce';
 
 // Components
 import { QueueFilters } from '@/components/queues/QueueFilters';
@@ -34,8 +35,20 @@ export default function HomePage() {
   // Connection management
   const { activeConnection, loading: connectionsLoading } = useConnections();
   
-  // Broker metrics - solo si hay conexión activa
-  const { metrics, loading: metricsLoading, error: metricsError, refetch: refetchMetrics } = useBrokerMetrics(!!activeConnection);
+  // Broker metrics - VERSIÓN ULTRA SEGURA
+  const metricsHookResult = useBrokerMetrics(!!activeConnection);
+  
+  // DEBUG: Log para ver qué está retornando el hook
+  console.log('metricsHookResult:', metricsHookResult);
+  
+  // Verificar que el hook retorne un objeto válido
+  const metrics = (metricsHookResult && typeof metricsHookResult === 'object') ? metricsHookResult.metrics : null;
+  const metricsLoading = (metricsHookResult && typeof metricsHookResult === 'object') ? Boolean(metricsHookResult.loading) : false;
+  const metricsError = (metricsHookResult && typeof metricsHookResult === 'object') ? metricsHookResult.error : null;
+  const refetchMetrics = (metricsHookResult && typeof metricsHookResult === 'object' && typeof metricsHookResult.refetch === 'function') ? metricsHookResult.refetch : () => Promise.resolve();
+  
+  // DEBUG: Log para ver los valores extraídos
+  console.log('metricsLoading:', metricsLoading, 'type:', typeof metricsLoading);
   
   // Queue management - solo si hay conexión activa
   const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues(!!activeConnection);
@@ -52,6 +65,9 @@ export default function HomePage() {
     prefix: '',
     suffix: '',
   });
+
+  // Debounce filtros para mejor rendimiento
+  const debouncedFilters = useDebounce(filters, 300);
 
   // Handlers
   const handleSelectQueue = async (queue: QueueInfo) => {
@@ -279,12 +295,12 @@ export default function HomePage() {
                 <Button
                   variant="ghost"
                   onClick={handleRefreshAll}
-                  disabled={queuesLoading || metricsLoading}
+                  disabled={queuesLoading || (metricsLoading === true)}
                   size="sm"
                   className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
-                  title="Actualizar datos"
+                  title="Actualizar todo"
                 >
-                  <RefreshCcw className={`h-4 w-4 ${(queuesLoading || metricsLoading) ? 'animate-spin' : ''}`} />
+                  <RefreshCcw className={`h-4 w-4 ${(queuesLoading || (metricsLoading === true)) ? 'animate-spin' : ''}`} />
                 </Button>
 
                 {/* Logout/Perfil */}
@@ -306,16 +322,36 @@ export default function HomePage() {
         {/* Main Content */}
         <main className="max-w-full mx-auto px-6 py-4">
           <div className="space-y-4">
-            {/* Filters */}
-            <QueueFilters
-              filters={filters}
-              onFiltersChange={setFilters}
-            />
-
             {/* Main Layout: Lista de Colas + Panel de Mensajes */}
             <div className="grid grid-cols-12 gap-4 h-[calc(100vh-180px)]">
               {/* Lista de Colas - Columna Izquierda */}
               <div className="col-span-5 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
+                {/* Header del Panel de Colas con Filtros y Botón */}
+                <div className="p-4 border-b border-slate-200 bg-white">
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-lg font-semibold text-slate-800">
+                      Colas ({queues.length})
+                    </h2>
+                    <div className="flex items-center gap-3">
+                      <QueueFilters 
+                        filters={filters}
+                        onFiltersChange={setFilters}
+                        compact={true}
+                      />
+                      <Button
+                        variant="ghost"
+                        onClick={refetchQueues}
+                        disabled={queuesLoading}
+                        size="sm"
+                        className="text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
+                        title="Actualizar colas"
+                      >
+                        <Database className={`h-4 w-4 ${queuesLoading ? 'animate-spin' : ''}`} />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
                 {queuesLoading ? (
                   <div className="p-4">
                     <LoadingSpinner count={8} />
@@ -327,7 +363,7 @@ export default function HomePage() {
                 ) : (
                   <QueueList
                     queues={queues}
-                    filters={filters}
+                    filters={debouncedFilters}
                     selectedQueue={selectedQueue}
                     onSelectQueue={handleSelectQueue}
                     onSendMessage={handleSendMessage}

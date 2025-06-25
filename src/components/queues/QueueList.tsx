@@ -1,7 +1,11 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { QueueInfo, QueueFilters } from '@/types/queue';
 import { QueueRow } from './QueueRow';
-import { Search, Database, Filter } from 'lucide-react';
+import { Search, Database, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Button } from '@/components/ui/Button';
+
+type SortField = 'name' | 'messageCount' | 'consumerCount';
+type SortOrder = 'asc' | 'desc' | 'none';
 
 interface QueueListProps {
   queues: QueueInfo[];
@@ -24,8 +28,29 @@ export function QueueList({
   onDeleteQueue,
   onPauseQueue,
 }: QueueListProps) {
-  const filteredQueues = useMemo(() => {
-    return queues.filter((queue) => {
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cambiar orden: asc -> desc -> none -> asc
+      setSortOrder(sortOrder === 'asc' ? 'desc' : sortOrder === 'desc' ? 'none' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3" />;
+    if (sortOrder === 'asc') return <ArrowUp className="h-3 w-3" />;
+    if (sortOrder === 'desc') return <ArrowDown className="h-3 w-3" />;
+    return <ArrowUpDown className="h-3 w-3" />;
+  };
+
+  const filteredAndSortedQueues = useMemo(() => {
+    // Primero filtrar
+    let filtered = queues.filter((queue) => {
       const matchesGeneral = !filters.general || 
         queue.name.toLowerCase().includes(filters.general.toLowerCase());
       
@@ -34,60 +59,104 @@ export function QueueList({
       
       const matchesSuffix = !filters.suffix || 
         queue.name.toLowerCase().endsWith(filters.suffix.toLowerCase());
-
+      
       return matchesGeneral && matchesPrefix && matchesSuffix;
     });
-  }, [queues, filters]);
+
+    // Luego ordenar
+    if (sortOrder !== 'none') {
+      filtered.sort((a, b) => {
+        let aValue: string | number;
+        let bValue: string | number;
+
+        switch (sortField) {
+          case 'name':
+            aValue = a.name.toLowerCase();
+            bValue = b.name.toLowerCase();
+            break;
+          case 'messageCount':
+            aValue = a.queueSize || 0;
+            bValue = b.queueSize || 0;
+            break;
+          case 'consumerCount':
+            aValue = a.consumerCount || 0;
+            bValue = b.consumerCount || 0;
+            break;
+          default:
+            return 0;
+        }
+
+        if (aValue < bValue) return sortOrder === 'asc' ? -1 : 1;
+        if (aValue > bValue) return sortOrder === 'asc' ? 1 : -1;
+        return 0;
+      });
+    }
+
+    return filtered;
+  }, [queues, filters, sortField, sortOrder]);
 
   const hasActiveFilters = filters.general || filters.prefix || filters.suffix;
 
   // Calcular estadísticas
-  const totalMessages = filteredQueues.reduce((sum, queue) => sum + queue.queueSize, 0);
-  const totalConsumers = filteredQueues.reduce((sum, queue) => sum + queue.consumerCount, 0);
-  const activeQueues = filteredQueues.filter(queue => queue.queueSize > 0).length;
+  const totalMessages = filteredAndSortedQueues.reduce((sum, queue) => sum + queue.queueSize, 0);
+  const totalConsumers = filteredAndSortedQueues.reduce((sum, queue) => sum + queue.consumerCount, 0);
+  const activeQueues = filteredAndSortedQueues.filter(queue => queue.queueSize > 0).length;
 
-  if (filteredQueues.length === 0) {
+  if (filteredAndSortedQueues.length === 0) {
     return (
       <div className="flex flex-col h-full">
-        {/* Header Compacto */}
+        {/* Header con controles de ordenamiento */}
         <div className="border-b border-slate-200 bg-white">
           <div className="p-3">
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-500/10 p-1.5 rounded border border-blue-500/20">
-                <Database className="h-4 w-4 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-slate-800">
-                  Colas del Broker
-                </h2>
-                <p className="text-xs text-slate-600">
-                  {queues.length} colas disponibles
-                </p>
-              </div>
+            <div className="flex items-center gap-2 mb-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('name')}
+                className="text-xs"
+              >
+                Nombre {getSortIcon('name')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('messageCount')}
+                className="text-xs"
+              >
+                Mensajes {getSortIcon('messageCount')}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleSort('consumerCount')}
+                className="text-xs"
+              >
+                Consumidores {getSortIcon('consumerCount')}
+              </Button>
             </div>
           </div>
         </div>
 
-        {/* Estado Vacío Compacto */}
-        <div className="flex flex-col items-center justify-center h-full text-center p-6">
-          <div className="bg-slate-700/30 rounded-full p-4 mb-3">
-            <Search className="h-8 w-8 text-slate-500" />
-          </div>
-          <div className="text-base font-medium text-white mb-2">
-            {queues.length === 0 ? 'Sin colas' : 'Sin resultados'}
-          </div>
-          <p className="text-slate-400 text-sm mb-3 max-w-xs">
-            {queues.length === 0 
-              ? 'No hay colas en el broker' 
-              : 'Ajusta los filtros para ver más colas'
-            }
-          </p>
-          {hasActiveFilters && (
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <Filter className="h-3 w-3" />
-              <span>Filtros activos</span>
+        {/* Estado vacío */}
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="text-center">
+            <div className="w-16 h-16 mx-auto mb-4 bg-slate-100 rounded-full flex items-center justify-center">
+              {hasActiveFilters ? (
+                <Search className="h-8 w-8 text-slate-400" />
+              ) : (
+                <Database className="h-8 w-8 text-slate-400" />
+              )}
             </div>
-          )}
+            <h3 className="text-lg font-medium text-slate-900 mb-2">
+              {hasActiveFilters ? 'No se encontraron colas' : 'No hay colas disponibles'}
+            </h3>
+            <p className="text-slate-500 max-w-sm">
+              {hasActiveFilters 
+                ? 'Intenta ajustar los filtros para encontrar las colas que buscas.'
+                : 'Conecta con un broker ActiveMQ para ver las colas disponibles.'
+              }
+            </p>
+          </div>
         </div>
       </div>
     );
@@ -95,66 +164,59 @@ export function QueueList({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header Compacto */}
-      <div className="border-b border-slate-700 bg-gradient-to-r from-slate-800 to-slate-750">
+      {/* Header con controles de ordenamiento */}
+      <div className="border-b border-slate-200 bg-white">
         <div className="p-3">
-          {/* Título y Contador */}
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <div className="bg-blue-500/20 p-1.5 rounded border border-blue-500/30">
-                <Database className="h-4 w-4 text-blue-400" />
-              </div>
-              <div>
-                <h2 className="font-semibold text-white">
-                  Colas del Broker
-                </h2>
-                <p className="text-xs text-slate-400">
-                  {filteredQueues.length} de {queues.length} colas
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {hasActiveFilters && (
-                <span className="text-xs bg-amber-500/20 text-amber-300 px-2 py-1 rounded-full font-medium border border-amber-500/30">
-                  filtrado
-                </span>
-              )}
-            </div>
+          <div className="flex items-center gap-2 mb-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('name')}
+              className="text-xs"
+            >
+              Nombre {getSortIcon('name')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('messageCount')}
+              className="text-xs"
+            >
+              Mensajes {getSortIcon('messageCount')}
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => handleSort('consumerCount')}
+              className="text-xs"
+            >
+              Consumidores {getSortIcon('consumerCount')}
+            </Button>
           </div>
-
-          {/* Métricas Compactas en una línea */}
-          <div className="flex items-center gap-4 text-xs">
-            <div className="flex items-center gap-1">
-              <span className="text-slate-600">Mensajes:</span>
-              <span className="text-slate-800 font-medium">{totalMessages.toLocaleString()}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-slate-600">Consumidores:</span>
-              <span className="text-slate-800 font-medium">{totalConsumers}</span>
-            </div>
-            <div className="flex items-center gap-1">
-              <span className="text-slate-600">Activas:</span>
-              <span className="text-blue-600 font-medium">{activeQueues}</span>
-            </div>
+          
+          {/* Estadísticas */}
+          <div className="flex items-center gap-4 text-xs text-slate-500">
+            <span>{filteredAndSortedQueues.length} colas</span>
+            <span>{totalMessages} mensajes</span>
+            <span>{totalConsumers} consumidores</span>
+            <span>{activeQueues} activas</span>
           </div>
         </div>
       </div>
 
-      {/* Lista de Colas Compacta */}
+      {/* Lista de colas */}
       <div className="flex-1 overflow-y-auto">
-        <div className="divide-y divide-slate-700/30">
-          {filteredQueues.map((queue, index) => (
+        <div className="divide-y divide-slate-200">
+          {filteredAndSortedQueues.map((queue) => (
             <QueueRow
               key={queue.name}
               queue={queue}
-              index={index}
               isSelected={selectedQueue?.name === queue.name}
-              onSelect={onSelectQueue}
-              onSendMessage={onSendMessage}
-              onPurgeQueue={onPurgeQueue}
-              onDeleteQueue={onDeleteQueue}
-              onPauseQueue={onPauseQueue}
+              onSelect={() => onSelectQueue(queue)}
+              onSendMessage={onSendMessage ? () => onSendMessage(queue) : undefined}
+              onPurgeQueue={onPurgeQueue ? () => onPurgeQueue(queue) : undefined}
+              onDeleteQueue={onDeleteQueue ? () => onDeleteQueue(queue) : undefined}
+              onPauseQueue={onPauseQueue ? () => onPauseQueue(queue) : undefined}
             />
           ))}
         </div>

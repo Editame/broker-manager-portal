@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { QueueInfo } from '@/types/queue';
 import { LoadingState } from '@/types/common';
 import { fetchQueues } from '@/lib/api/service';
@@ -27,16 +27,28 @@ export function useQueues(enabled: boolean = true) {
     setLoadingState({ loading: false, error: null });
   }, [enabled]);
 
+  // Cargar colas solo una vez al inicio, sin intervalo automático
   useEffect(() => {
     if (enabled) {
       loadQueues();
     }
-  }, [loadQueues, enabled]);
+  }, [enabled, loadQueues]);
+
+  const queueStats = useMemo(() => {
+    if (!queues.length) return { total: 0, withMessages: 0, withConsumers: 0 };
+    
+    return {
+      total: queues.length,
+      withMessages: queues.filter(q => q.queueSize > 0).length,
+      withConsumers: queues.filter(q => q.consumerCount > 0).length,
+    };
+  }, [queues]);
 
   return {
     queues,
     loading,
     error,
     refetch: loadQueues,
+    stats: queueStats,
   };
 }

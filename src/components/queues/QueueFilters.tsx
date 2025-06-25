@@ -1,18 +1,36 @@
-import { Filter } from 'lucide-react';
+import { Filter, Search } from 'lucide-react';
 import { QueueFilters as QueueFiltersType } from '@/types/queue';
 
 interface QueueFiltersProps {
   filters: QueueFiltersType;
   onFiltersChange: (filters: QueueFiltersType) => void;
+  compact?: boolean;
 }
 
-export function QueueFilters({ filters, onFiltersChange }: QueueFiltersProps) {
+export function QueueFilters({ filters, onFiltersChange, compact = false }: QueueFiltersProps) {
   const handleFilterChange = (key: keyof QueueFiltersType, value: string) => {
     onFiltersChange({
       ...filters,
       [key]: value,
     });
   };
+
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2">
+        <div className="relative">
+          <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-slate-400" />
+          <input
+            type="text"
+            placeholder="Buscar colas..."
+            value={filters.general}
+            onChange={(e) => handleFilterChange('general', e.target.value)}
+            className="pl-7 pr-3 py-1 text-xs border border-slate-300 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 w-40"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-slate-800 p-6 rounded-lg shadow-lg border border-slate-700">
