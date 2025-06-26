@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 export default function TestConnections() {
   const [connections, setConnections] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [activating, setActivating] = useState(null);
+  const [error, setError] = useState<string | null>(null);
+  const [activating, setActivating] = useState<string | null>(null);
 
   const fetchConnections = async () => {
     try {
@@ -15,13 +15,13 @@ export default function TestConnections() {
       const data = await response.json();
       setConnections(data);
     } catch (err) {
-      setError(err.message);
+      setError(err instanceof Error ? err.message : 'Error desconocido');
     } finally {
       setLoading(false);
     }
   };
 
-  const activateConnection = async (id, name) => {
+  const activateConnection = async (id: string, name: string) => {
     try {
       setActivating(id);
       console.log(`Activando conexión: ${name} (${id})`);

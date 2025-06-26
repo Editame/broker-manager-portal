@@ -45,8 +45,8 @@ export default function HomePage() {
     refetch: refetchConnections
   } = useConnections();
   
-  // Broker metrics - SOLO cuando el usuario está conectado
-  const metricsHookResult = useBrokerMetrics(isUserConnected);
+  // Broker metrics - Usando conexión activa
+  const metricsHookResult = useBrokerMetrics(activeConnection?.id || null, activeConnection?.active || false);
   
   // DEBUG: Log para ver qué está retornando el hook
   console.log('metricsHookResult:', metricsHookResult);
@@ -60,8 +60,8 @@ export default function HomePage() {
   // DEBUG: Log para ver los valores extraídos
   console.log('metricsLoading:', metricsLoading, 'type:', typeof metricsLoading);
   
-  // Queue management - SOLO cuando el usuario está conectado
-  const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues(isUserConnected);
+  // Queue management - Usando conexión activa
+  const { queues, loading: queuesLoading, error: queuesError, refetch: refetchQueues } = useQueues(activeConnection?.id || null, activeConnection?.active || false);
   const { messages, loading: messagesLoading, error: messagesError, loadMessages, clearMessages } = useMessages();
 
   // UI State
@@ -198,11 +198,9 @@ export default function HomePage() {
       // Primero refrescar las conexiones para obtener la nueva conexión activa
       await refetchConnections();
       
-      // Luego refrescar los datos del broker con un pequeño delay
-      setTimeout(() => {
-        refetchQueues();
-        refetchMetrics();
-      }, 300);
+      // Luego refrescar los datos del broker inmediatamente
+      refetchQueues();
+      refetchMetrics();
       
     } catch (error) {
       console.error('Error refreshing data after broker change:', error);

@@ -22,10 +22,8 @@ export function BrokerSelector({ onOpenSettings, onBrokerChange }: BrokerSelecto
       
       await connectToConnection(connectionId);
       
-      // Disparar callback para actualizar datos - SIN RECARGA
-      setTimeout(() => {
-        onBrokerChange?.();
-      }, 500);
+      // Disparar callback inmediatamente para actualizar datos
+      onBrokerChange?.();
       
     } catch (error) {
       console.error('Error switching broker:', error);

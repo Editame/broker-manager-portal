@@ -21,47 +21,53 @@ export interface BrokerMetrics {
   timestamp: string;
 }
 
-export function useBrokerMetrics(enabled: boolean = true) {
+export function useBrokerMetrics(connectionId: string | null, isActive: boolean = false) {
   const [metrics, setMetrics] = useState<BrokerMetrics | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchMetrics = useCallback(async () => {
-    if (!enabled) return;
+    // Si no hay conexión o no está activa, limpiar datos y no hacer peticiones
+    if (!connectionId || !isActive) {
+      console.log('🚫 No hay conexión activa o broker no disponible - limpiando métricas');
+      setMetrics(null);
+      setLoading(false);
+      setError(!connectionId ? 'No hay conexión seleccionada' : 'Broker no disponible');
+      return;
+    }
     
     try {
+      console.log(`📊 Obteniendo métricas para conexión: ${connectionId}`);
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:8080/api/broker/metrics');
+      // Hacer petición específica a la conexión activa
+      const response = await fetch(`http://localhost:8080/api/broker/metrics?connectionId=${connectionId}`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log(`✅ Métricas obtenidas para ${data.brokerName}`);
       setMetrics(data);
     } catch (err) {
-      console.error('Error fetching broker metrics:', err);
+      console.error('❌ Error fetching broker metrics:', err);
       setError('No se pudieron obtener las métricas del broker');
+      setMetrics(null);
     } finally {
       setLoading(false);
     }
-  }, [enabled]);
+  }, [connectionId, isActive]);
 
   useEffect(() => {
-    if (enabled) {
-      fetchMetrics();
-      
-      // Actualizar métricas cada 30 segundos
+    fetchMetrics();
+    
+    if (connectionId && isActive) {
+      // Actualizar métricas cada 30 segundos solo si hay conexión activa
       const interval = setInterval(fetchMetrics, 30000);
       return () => clearInterval(interval);
-    } else {
-      // Limpiar datos cuando no está habilitado
-      setMetrics(null);
-      setLoading(false);
-      setError(null);
     }
-  }, [fetchMetrics, enabled]);
+  }, [fetchMetrics, connectionId, isActive]);
 
   return {
     metrics,
