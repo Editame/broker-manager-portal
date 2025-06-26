@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { TooltipProvider } from '@radix-ui/react-tooltip';
-import { RefreshCcw, Database } from 'lucide-react';
+import { RefreshCcw, Database, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 // Hooks
@@ -14,9 +14,10 @@ import { useDebounce } from '@/hooks/useDebounce';
 
 // Components
 import { QueueFilters } from '@/components/queues/QueueFilters';
-import { QueueList } from '@/components/queues/QueueList';
+import { QueueList, SortField, SortOrder } from '@/components/queues/QueueList';
 import { MessagePanel } from '@/components/messages/MessagePanel';
 import { MessageViewer } from '@/components/messages/MessageViewer';
+import { RequeueModal } from '@/components/messages/RequeueModal';
 import { SendMessageModal, SendMessageData } from '@/components/messages/SendMessageModal';
 import { LoadingSpinner } from '@/components/common/LoadingSpinner';
 import { ErrorMessage } from '@/components/common/ErrorMessage';
@@ -26,7 +27,7 @@ import { ConnectionModal } from '@/components/connections/ConnectionModal';
 // Types
 import { QueueInfo, QueueFilters as QueueFiltersType } from '@/types/queue';
 import { Message } from '@/types/message';
-import { sendMessage, deleteMessage } from '@/lib/api/service';
+import { sendMessage, deleteMessage, requeueMessages, purgeQueue } from '@/lib/api/service';
 
 // Styles
 import '@/app/globals.css';
@@ -74,14 +75,57 @@ export default function HomePage() {
     prefix: '',
     suffix: '',
   });
+  
+  // Estado para copiar/cortar/pegar mensajes
+  const [clipboardMessages, setClipboardMessages] = useState<Message[]>([]);
+  const [clipboardOperation, setClipboardOperation] = useState<'copy' | 'cut' | null>(null);
+  const [clipboardSourceQueue, setClipboardSourceQueue] = useState<string | null>(null);
+  const [showRequeueModal, setShowRequeueModal] = useState(false);
+  const [targetQueue, setTargetQueue] = useState<QueueInfo | null>(null);
+
+  // Estado para ordenamiento de colas
+  const [sortField, setSortField] = useState<SortField>('name');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
 
   // Debounce filtros para mejor rendimiento
   const debouncedFilters = useDebounce(filters, 300);
+
+  // Calcular estadísticas de colas filtradas
+  const filteredQueues = queues.filter((queue) => {
+    const matchesGeneral = !debouncedFilters.general || 
+      queue.name.toLowerCase().includes(debouncedFilters.general.toLowerCase());
+    const matchesPrefix = !debouncedFilters.prefix || 
+      queue.name.toLowerCase().startsWith(debouncedFilters.prefix.toLowerCase());
+    const matchesSuffix = !debouncedFilters.suffix || 
+      queue.name.toLowerCase().endsWith(debouncedFilters.suffix.toLowerCase());
+    return matchesGeneral && matchesPrefix && matchesSuffix;
+  });
+
+  const totalMessages = filteredQueues.reduce((sum, queue) => sum + queue.queueSize, 0);
+  const totalConsumers = filteredQueues.reduce((sum, queue) => sum + queue.consumerCount, 0);
+  const activeQueues = filteredQueues.filter(queue => queue.queueSize > 0).length;
 
   // Handlers
   const handleSelectQueue = async (queue: QueueInfo) => {
     setSelectedQueue(queue);
     await loadMessages(queue.name);
+  };
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      // Cambiar orden: asc -> desc -> none -> asc
+      setSortOrder(sortOrder === 'asc' ? 'desc' : sortOrder === 'desc' ? 'none' : 'asc');
+    } else {
+      setSortField(field);
+      setSortOrder('asc');
+    }
+  };
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return <ArrowUpDown className="h-3 w-3" />;
+    if (sortOrder === 'asc') return <ArrowUp className="h-3 w-3" />;
+    if (sortOrder === 'desc') return <ArrowDown className="h-3 w-3" />;
+    return <ArrowUpDown className="h-3 w-3" />;
   };
 
   const handleViewMessage = (message: Message) => {
@@ -194,6 +238,79 @@ export default function HomePage() {
       </div>
     );
   }
+  const handleCopyMessages = (messages: Message[]) => {
+    setClipboardMessages(messages);
+    setClipboardOperation('copy');
+    setClipboardSourceQueue(selectedQueue?.name || null);
+    
+    // Mostrar notificación
+    alert(`${messages.length} mensaje(s) copiado(s) al portapapeles`);
+  };
+
+  const handleCutMessages = (messages: Message[]) => {
+    setClipboardMessages(messages);
+    setClipboardOperation('cut');
+    setClipboardSourceQueue(selectedQueue?.name || null);
+    
+    // Mostrar notificación
+    alert(`${messages.length} mensaje(s) cortado(s) al portapapeles`);
+  };
+
+  const handlePasteMessages = async (targetQueueInfo: QueueInfo) => {
+    if (clipboardMessages.length === 0 || !clipboardOperation) {
+      alert('No hay mensajes en el portapapeles');
+      return;
+    }
+    
+    setTargetQueue(targetQueueInfo);
+    setShowRequeueModal(true);
+  };
+
+  const handleConfirmRequeue = async () => {
+    if (!clipboardMessages.length || !targetQueue || !clipboardSourceQueue || !clipboardOperation) {
+      setShowRequeueModal(false);
+      return;
+    }
+    
+    try {
+      // Implementación real de reencolar mensajes
+      const messageIds = clipboardMessages.map(msg => msg.id);
+      
+      // Llamar al backend para reencolar los mensajes, pasando el tipo de operación
+      await requeueMessages(clipboardSourceQueue, targetQueue.name, messageIds, clipboardOperation);
+      
+      const operationText = clipboardOperation === 'cut' ? 'movidos' : 'copiados';
+      alert(`${clipboardMessages.length} mensaje(s) ${operationText} de ${clipboardSourceQueue} a ${targetQueue.name}`);
+      
+      // Limpiar el portapapeles después de la operación
+      setClipboardMessages([]);
+      setClipboardOperation(null);
+      setClipboardSourceQueue(null);
+      
+      // Refrescar las colas para ver los cambios
+      refetchQueues();
+      
+      // Refrescar los mensajes de la cola origen si está seleccionada (para ver que se eliminaron en caso de cut)
+      if (selectedQueue?.name === clipboardSourceQueue) {
+        loadMessages(clipboardSourceQueue);
+      }
+      
+      // Si la cola seleccionada es la misma que la cola destino, refrescar los mensajes
+      if (selectedQueue?.name === targetQueue.name) {
+        loadMessages(targetQueue.name);
+      }
+      
+      setShowRequeueModal(false);
+    } catch (error) {
+      console.error('Error reencolando mensajes:', error);
+      alert('Error al reencolar mensajes');
+      setShowRequeueModal(false);
+    }
+  };
+
+  const handleCancelRequeue = () => {
+    setShowRequeueModal(false);
+  };
 
   // Mostrar modal de conexión si no hay conexiones disponibles O si no hay usuario conectado
   if (!activeConnection && hasCheckedConnection) {
@@ -219,9 +336,25 @@ export default function HomePage() {
     );
   }
 
-  const handlePurgeQueue = (queue: QueueInfo) => {
-    // TODO: Implementar confirmación y purga
-    console.log('Purgar cola:', queue.name);
+  const handlePurgeQueue = async (queue: QueueInfo) => {
+    if (window.confirm(`¿Estás seguro de que deseas purgar la cola "${queue.name}"? Esta acción eliminará todos los mensajes de la cola.`)) {
+      try {
+        await purgeQueue(queue.name);
+        
+        // Refrescar las colas para actualizar el contador
+        refetchQueues();
+        
+        // Si la cola seleccionada es la que se purgó, refrescar los mensajes
+        if (selectedQueue?.name === queue.name) {
+          loadMessages(queue.name);
+        }
+        
+        alert(`Cola "${queue.name}" purgada exitosamente`);
+      } catch (error) {
+        console.error('Error purging queue:', error);
+        alert('Error al purgar la cola');
+      }
+    }
   };
 
   const handleDeleteQueue = (queue: QueueInfo) => {
@@ -393,12 +526,38 @@ export default function HomePage() {
             <div className="grid grid-cols-12 gap-4 h-[calc(100vh-180px)]">
               {/* Lista de Colas - Columna Izquierda */}
               <div className="col-span-5 bg-slate-50 rounded-lg border border-slate-200 overflow-hidden shadow-sm">
-                {/* Header del Panel de Colas con Filtros y Botón */}
+                {/* Header del Panel de Colas - Sección Unificada */}
                 <div className="p-4 border-b border-slate-200 bg-white">
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-lg font-semibold text-slate-800">
-                      Colas ({queues.length})
-                    </h2>
+                  <div className="flex items-center justify-between mb-2">
+                    {/* Controles de ordenamiento a la izquierda */}
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort('name')}
+                        className="text-xs"
+                      >
+                        Nombre {getSortIcon('name')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort('messageCount')}
+                        className="text-xs"
+                      >
+                        Mensajes {getSortIcon('messageCount')}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleSort('consumerCount')}
+                        className="text-xs"
+                      >
+                        Consumidores {getSortIcon('consumerCount')}
+                      </Button>
+                    </div>
+                    
+                    {/* Filtros y botón de actualizar a la derecha */}
                     <div className="flex items-center gap-3">
                       <QueueFilters 
                         filters={filters}
@@ -416,6 +575,14 @@ export default function HomePage() {
                         <Database className={`h-4 w-4 ${queuesLoading ? 'animate-spin' : ''}`} />
                       </Button>
                     </div>
+                  </div>
+                  
+                  {/* Estadísticas */}
+                  <div className="flex items-center gap-4 text-xs text-slate-500">
+                    <span>{filteredQueues.length} colas</span>
+                    <span>{totalMessages} mensajes</span>
+                    <span>{totalConsumers} consumidores</span>
+                    <span>{activeQueues} activas</span>
                   </div>
                 </div>
 
@@ -437,6 +604,11 @@ export default function HomePage() {
                     onPurgeQueue={handlePurgeQueue}
                     onDeleteQueue={handleDeleteQueue}
                     onPauseQueue={handlePauseQueue}
+                    onPasteMessages={handlePasteMessages}
+                    clipboardHasMessages={clipboardMessages.length > 0}
+                    sortField={sortField}
+                    sortOrder={sortOrder}
+                    onSort={handleSort}
                   />
                 )}
               </div>
@@ -451,6 +623,8 @@ export default function HomePage() {
                   onViewMessage={handleViewMessage}
                   onRefresh={handleRefreshMessages}
                   onDeleteMessage={handleDeleteMessage}
+                  onCopyMessages={handleCopyMessages}
+                  onCutMessages={handleCutMessages}
                 />
               </div>
             </div>
@@ -478,6 +652,17 @@ export default function HomePage() {
           message={selectedMessage}
           isOpen={!!selectedMessage}
           onClose={handleCloseMessageViewer}
+        />
+        
+        {/* Requeue Modal */}
+        <RequeueModal
+          isOpen={showRequeueModal}
+          onClose={handleCancelRequeue}
+          onConfirm={handleConfirmRequeue}
+          sourceQueue={clipboardSourceQueue}
+          targetQueue={targetQueue}
+          messages={clipboardMessages}
+          operation={clipboardOperation}
         />
       </div>
     </TooltipProvider>

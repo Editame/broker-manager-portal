@@ -1,11 +1,11 @@
 import { useMemo, useState } from 'react';
 import { QueueInfo, QueueFilters } from '@/types/queue';
 import { QueueRow } from './QueueRow';
-import { Search, Database, Filter, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
+import { Search, Database, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
-type SortField = 'name' | 'messageCount' | 'consumerCount';
-type SortOrder = 'asc' | 'desc' | 'none';
+export type SortField = 'name' | 'messageCount' | 'consumerCount';
+export type SortOrder = 'asc' | 'desc' | 'none';
 
 interface QueueListProps {
   queues: QueueInfo[];
@@ -16,6 +16,12 @@ interface QueueListProps {
   onPurgeQueue?: (queue: QueueInfo) => void;
   onDeleteQueue?: (queue: QueueInfo) => void;
   onPauseQueue?: (queue: QueueInfo) => void;
+  onPasteMessages?: (queue: QueueInfo) => void;
+  clipboardHasMessages?: boolean;
+  // Props para ordenamiento
+  sortField?: SortField;
+  sortOrder?: SortOrder;
+  onSort?: (field: SortField) => void;
 }
 
 export function QueueList({
@@ -27,17 +33,31 @@ export function QueueList({
   onPurgeQueue,
   onDeleteQueue,
   onPauseQueue,
+  onPasteMessages,
+  clipboardHasMessages,
+  sortField: externalSortField,
+  sortOrder: externalSortOrder,
+  onSort,
 }: QueueListProps) {
-  const [sortField, setSortField] = useState<SortField>('name');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('asc');
+  // Usar estado externo si se proporciona, sino usar estado interno
+  const [internalSortField, setInternalSortField] = useState<SortField>('name');
+  const [internalSortOrder, setInternalSortOrder] = useState<SortOrder>('asc');
+  
+  const sortField = externalSortField ?? internalSortField;
+  const sortOrder = externalSortOrder ?? internalSortOrder;
 
   const handleSort = (field: SortField) => {
-    if (sortField === field) {
-      // Cambiar orden: asc -> desc -> none -> asc
-      setSortOrder(sortOrder === 'asc' ? 'desc' : sortOrder === 'desc' ? 'none' : 'asc');
+    if (onSort) {
+      // Usar función externa
+      onSort(field);
     } else {
-      setSortField(field);
-      setSortOrder('asc');
+      // Usar estado interno
+      if (internalSortField === field) {
+        setInternalSortOrder(internalSortOrder === 'asc' ? 'desc' : internalSortOrder === 'desc' ? 'none' : 'asc');
+      } else {
+        setInternalSortField(field);
+        setInternalSortOrder('asc');
+      }
     }
   };
 
@@ -134,11 +154,6 @@ export function QueueList({
 
   const hasActiveFilters = filters.general || filters.prefix || filters.suffix;
 
-  // Calcular estadísticas
-  const totalMessages = filteredAndSortedQueues.reduce((sum, queue) => sum + queue.queueSize, 0);
-  const totalConsumers = filteredAndSortedQueues.reduce((sum, queue) => sum + queue.consumerCount, 0);
-  const activeQueues = filteredAndSortedQueues.filter(queue => queue.queueSize > 0).length;
-
   if (filteredAndSortedQueues.length === 0) {
     return (
       <div className="flex flex-col h-full">
@@ -201,59 +216,22 @@ export function QueueList({
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header con controles de ordenamiento */}
-      <div className="border-b border-slate-200 bg-white">
-        <div className="p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleSort('name')}
-              className="text-xs"
-            >
-              Nombre {getSortIcon('name')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleSort('messageCount')}
-              className="text-xs"
-            >
-              Mensajes {getSortIcon('messageCount')}
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handleSort('consumerCount')}
-              className="text-xs"
-            >
-              Consumidores {getSortIcon('consumerCount')}
-            </Button>
-          </div>
-          
-          {/* Estadísticas */}
-          <div className="flex items-center gap-4 text-xs text-slate-500">
-            <span>{filteredAndSortedQueues.length} colas</span>
-            <span>{totalMessages} mensajes</span>
-            <span>{totalConsumers} consumidores</span>
-            <span>{activeQueues} activas</span>
-          </div>
-        </div>
-      </div>
-
       {/* Lista de colas */}
       <div className="flex-1 overflow-y-auto">
         <div className="divide-y divide-slate-200">
-          {filteredAndSortedQueues.map((queue) => (
+          {filteredAndSortedQueues.map((queue, index) => (
             <QueueRow
               key={queue.name}
               queue={queue}
+              index={index}
               isSelected={selectedQueue?.name === queue.name}
               onSelect={() => onSelectQueue(queue)}
               onSendMessage={onSendMessage ? () => onSendMessage(queue) : undefined}
               onPurgeQueue={onPurgeQueue ? () => onPurgeQueue(queue) : undefined}
               onDeleteQueue={onDeleteQueue ? () => onDeleteQueue(queue) : undefined}
               onPauseQueue={onPauseQueue ? () => onPauseQueue(queue) : undefined}
+              onPasteMessages={onPasteMessages ? () => onPasteMessages(queue) : undefined}
+              clipboardHasMessages={clipboardHasMessages}
             />
           ))}
         </div>

@@ -11,6 +11,7 @@ import {
   Users,
   TrendingUp,
   TrendingDown,
+  Clipboard,
 } from 'lucide-react';
 
 interface QueueRowProps {
@@ -22,6 +23,8 @@ interface QueueRowProps {
   onPurgeQueue?: (queue: QueueInfo) => void;
   onDeleteQueue?: (queue: QueueInfo) => void;
   onPauseQueue?: (queue: QueueInfo) => void;
+  onPasteMessages?: (queue: QueueInfo) => void;
+  clipboardHasMessages?: boolean;
 }
 
 export function QueueRow({
@@ -33,6 +36,8 @@ export function QueueRow({
   onPurgeQueue,
   onDeleteQueue,
   onPauseQueue,
+  onPasteMessages,
+  clipboardHasMessages,
 }: QueueRowProps) {
   // Simulamos el estado de pausa (en el futuro vendrá del backend)
   const isPaused = false; // TODO: obtener del backend
@@ -113,6 +118,26 @@ export function QueueRow({
 
           {/* Acciones Compactas */}
           <div className="flex items-center gap-0.5 ml-3 opacity-0 group-hover:opacity-100 transition-opacity duration-150 flex-shrink-0">
+            {/* Pegar Mensajes */}
+            {onPasteMessages && clipboardHasMessages && (
+              <TooltipRoot>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onPasteMessages(queue);
+                    }}
+                    className="h-6 w-6 p-0 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 transition-all duration-150"
+                  >
+                    <Clipboard className="h-3 w-3" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Pegar mensajes</TooltipContent>
+              </TooltipRoot>
+            )}
+            
             {/* Enviar Mensaje */}
             {onSendMessage && (
               <TooltipRoot>

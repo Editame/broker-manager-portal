@@ -47,14 +47,17 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
 
   useEffect(() => {
     if (isOpen) {
+      console.log('ConnectionModal: Cargando conexiones...');
       loadConnections();
     }
   }, [isOpen]);
 
   const loadConnections = async () => {
     try {
+      console.log('loadConnections: Iniciando carga de conexiones...');
       setLoading(true);
       const data = await getAllConnections();
+      console.log('loadConnections: Conexiones cargadas', data);
       setConnections(data);
     } catch (error) {
       console.error('Error loading connections:', error);

@@ -17,24 +17,30 @@ export function useConnections() {
     if (fetchingRef.current) return;
     
     try {
+      console.log('fetchConnections: Iniciando petición...');
       fetchingRef.current = true;
       setLoading(true);
       setError(null);
       
       const response = await fetch('http://localhost:8080/api/connections');
+      console.log('fetchConnections: Respuesta recibida', response.status);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
+      console.log('fetchConnections: Datos recibidos', data);
       setConnections(data);
       
       // Encontrar conexión activa y establecer isUserConnected automáticamente
       const active = data.find((conn: BrokerConnection) => conn.active);
+      console.log('fetchConnections: Conexión activa', active);
       setActiveConnection(active || null);
       
       // Si hay conexión activa, el usuario está conectado
       if (active) {
+        console.log('fetchConnections: Usuario conectado automáticamente');
         setIsUserConnected(true);
       }
       
@@ -107,6 +113,7 @@ export function useConnections() {
   }, []);
 
   useEffect(() => {
+    console.log('useConnections: Cargando conexiones...');
     fetchConnections();
   }, [fetchConnections]);
 

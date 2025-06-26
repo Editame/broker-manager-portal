@@ -131,3 +131,80 @@ export async function deleteMessage(queueName: string, messageId: string): Promi
         throw new Error('No se pudo eliminar el mensaje');
     }
 }
+export async function requeueMessages(sourceQueue: string, targetQueue: string, messageIds: string[], operation: 'copy' | 'cut' = 'copy'): Promise<boolean> {
+    console.log(`🔄 API: ${operation === 'cut' ? 'Moving' : 'Copying'} ${messageIds.length} messages from ${sourceQueue} to ${targetQueue}`);
+    
+    try {
+        // 1. Obtener los mensajes completos de la cola origen
+        const messages = await fetchMessages(sourceQueue);
+        const messagesToRequeue = messages.filter(msg => messageIds.includes(msg.id));
+        
+        if (messagesToRequeue.length === 0) {
+            throw new Error('No se encontraron los mensajes a reencolar');
+        }
+        
+        console.log(`📦 API: Encontrados ${messagesToRequeue.length} mensajes para ${operation === 'cut' ? 'mover' : 'copiar'}`);
+        
+        // 2. Enviar cada mensaje a la cola destino
+        for (const message of messagesToRequeue) {
+            await sendMessage(targetQueue, {
+                body: message.body,
+                headers: message.headers || {},
+                properties: message.properties || {},
+                priority: message.priority || 4,
+                timeToLive: 0,
+                persistent: true
+            });
+        }
+        
+        console.log(`✅ API: ${messagesToRequeue.length} mensajes enviados a ${targetQueue}`);
+        
+        // 3. Si es operación de "cortar", eliminar los mensajes de la cola origen
+        if (operation === 'cut') {
+            console.log(`🗑️ API: Eliminando ${messageIds.length} mensajes de la cola origen ${sourceQueue}`);
+            
+            for (const messageId of messageIds) {
+                try {
+                    await deleteMessage(sourceQueue, messageId);
+                    console.log(`✅ API: Mensaje ${messageId} eliminado de ${sourceQueue}`);
+                } catch (error) {
+                    console.error(`❌ API: Error eliminando mensaje ${messageId} de ${sourceQueue}:`, error);
+                    // Continuamos con los demás mensajes aunque uno falle
+                }
+            }
+            
+            console.log(`✅ API: Operación de mover completada`);
+        }
+        
+        return true;
+    } catch (error) {
+        console.error('Error requeueing messages:', error);
+        throw new Error('No se pudieron reencolar los mensajes');
+    }
+}
+export async function purgeQueue(queueName: string): Promise<void> {
+    try {
+        console.log('Purgando cola:', queueName);
+        
+        const res = await fetch(ENDPOINTS.QUEUE_PURGE(queueName), {
+            method: 'DELETE',
+        });
+        
+        if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        
+        console.log('Cola purgada exitosamente');
+        
+        // Invalidar cache de mensajes para esta cola
+        const { apiCache } = await import('@/lib/cache');
+        if (apiCache && typeof apiCache.cache?.delete === 'function') {
+          apiCache.cache.delete(`messages-${queueName}`);
+          apiCache.cache.delete('queues'); // También invalidar la caché de colas
+        }
+        
+    } catch (error) {
+        console.error('Error purgando cola:', error);
+        throw new Error('No se pudo purgar la cola');
+    }
+}

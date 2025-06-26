@@ -116,27 +116,19 @@ export function MessageViewer({ message, isOpen, onClose }: MessageViewerProps) 
           </div>
 
           {/* Headers (si existen) - Colapsable */}
-          {message.headers && Object.keys(message.headers).length > 0 && (
+          {/* TODO: Agregar soporte para headers cuando sea necesario */}
+          {false && (
             <div className="flex-shrink-0">
               <details className="group">
                 <summary className="cursor-pointer text-sm font-medium text-slate-300 hover:text-white transition-colors mb-2 list-none">
                   <span className="flex items-center gap-2">
                     <span className="group-open:rotate-90 transition-transform">▶</span>
-                    Headers ({Object.keys(message.headers).length})
+                    Headers (0)
                   </span>
                 </summary>
                 <div className="bg-slate-700/30 border border-slate-600/30 rounded-lg p-3 max-h-32 overflow-y-auto">
                   <div className="space-y-1">
-                    {Object.entries(message.headers).map(([key, value]) => (
-                      <div key={key} className="flex items-start gap-2 text-xs">
-                        <span className="text-cyan-400 font-medium min-w-0 flex-shrink-0">
-                          {key}:
-                        </span>
-                        <span className="text-slate-200 font-mono break-all">
-                          {value?.toString() || 'null'}
-                        </span>
-                      </div>
-                    ))}
+                    <div className="text-xs text-slate-400">No headers available</div>
                   </div>
                 </div>
               </details>
