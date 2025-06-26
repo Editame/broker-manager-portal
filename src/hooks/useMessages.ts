@@ -14,7 +14,7 @@ export function useMessages() {
   const lastFetchRef = useRef<{ queueName: string; timestamp: number } | null>(null);
   const FETCH_COOLDOWN = 500; // Reducido a 500ms para mejor respuesta
 
-  const loadMessages = useCallback(async (queueName: string) => {
+  const loadMessages = useCallback(async (queueName: string, connectionId: string) => {
     // Control de frecuencia - evitar peticiones muy frecuentes a la misma cola
     const now = Date.now();
     if (lastFetchRef.current && 
@@ -29,7 +29,7 @@ export function useMessages() {
 
     try {
       setLoadingState({ loading: true, error: null });
-      const messageData = await fetchMessages(queueName);
+      const messageData = await fetchMessages(queueName, connectionId);
       
       const endTime = performance.now();
       const duration = endTime - startTime;
@@ -66,7 +66,7 @@ export function useMessages() {
     if (!messages.length) return { total: 0, byPriority: {} };
     
     const byPriority = messages.reduce((acc, msg) => {
-      const priority = msg.priority || 0;
+      const priority = 0; // Los mensajes simples no tienen prioridad
       acc[priority] = (acc[priority] || 0) + 1;
       return acc;
     }, {} as Record<number, number>);

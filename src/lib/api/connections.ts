@@ -5,38 +5,18 @@ import {
   TestConnectionRequest, 
   TestConnectionResponse 
 } from '@/types/connection';
-
-const API_BASE = 'http://localhost:8080/api/connections';
+import { API_CONFIG, buildApiUrl } from '@/lib/config/api';
 
 export async function getAllConnections(): Promise<BrokerConnection[]> {
-  const response = await fetch(API_BASE);
+  const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTIONS));
   if (!response.ok) {
     throw new Error(`Error fetching connections: ${response.status}`);
   }
   return response.json();
 }
 
-export async function getActiveConnection(): Promise<BrokerConnection | null> {
-  const response = await fetch(`${API_BASE}/active`);
-  if (response.status === 404) {
-    return null;
-  }
-  if (!response.ok) {
-    throw new Error(`Error fetching active connection: ${response.status}`);
-  }
-  return response.json();
-}
-
-export async function getConnection(id: string): Promise<BrokerConnection> {
-  const response = await fetch(`${API_BASE}/${id}`);
-  if (!response.ok) {
-    throw new Error(`Error fetching connection: ${response.status}`);
-  }
-  return response.json();
-}
-
 export async function createConnection(request: CreateConnectionRequest): Promise<BrokerConnection> {
-  const response = await fetch(API_BASE, {
+  const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTIONS), {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -53,7 +33,7 @@ export async function createConnection(request: CreateConnectionRequest): Promis
 }
 
 export async function updateConnection(id: string, request: UpdateConnectionRequest): Promise<BrokerConnection> {
-  const response = await fetch(`${API_BASE}/${id}`, {
+  const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTION_BY_ID(id)), {
     method: 'PUT',
     headers: {
       'Content-Type': 'application/json',
@@ -70,7 +50,7 @@ export async function updateConnection(id: string, request: UpdateConnectionRequ
 }
 
 export async function deleteConnection(id: string): Promise<void> {
-  const response = await fetch(`${API_BASE}/${id}`, {
+  const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTION_BY_ID(id)), {
     method: 'DELETE',
   });
   
@@ -80,31 +60,17 @@ export async function deleteConnection(id: string): Promise<void> {
   }
 }
 
-export async function testConnection(id: string): Promise<BrokerConnection> {
-  const response = await fetch(`${API_BASE}/${id}/test`, {
+export async function testConnection(id: string): Promise<TestConnectionResponse> {
+  const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTION_TEST(id)), {
     method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
   
   if (!response.ok) {
     const error = await response.text();
     throw new Error(`Error testing connection: ${error}`);
-  }
-  
-  return response.json();
-}
-
-export async function testConnectionConfig(request: TestConnectionRequest): Promise<TestConnectionResponse> {
-  const response = await fetch(`${API_BASE}/test`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(request),
-  });
-  
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Error testing connection config: ${error}`);
   }
   
   return response.json();
@@ -116,51 +82,31 @@ export async function activateConnection(connectionId: string): Promise<BrokerCo
     console.log(`🔍 Probando conectividad de la conexión: ${connectionId}`);
     const testResult = await testConnection(connectionId);
     
-    if (testResult.lastTestStatus !== 'CONNECTED') {
-      throw new Error(`Conexión fallida: ${testResult.lastTestMessage || 'No se pudo conectar al broker'}`);
+    if (testResult.status !== 'CONNECTED') {
+      throw new Error(`Conexión fallida: ${testResult.status || 'No se pudo conectar al broker'}`);
     }
     
     console.log(`✅ Conectividad confirmada, procediendo a activar...`);
     
-    // PASO 2: Si la conectividad es exitosa, activar la conexión
-    const allConnections = await getAllConnections();
-    const targetConnection = allConnections.find(conn => conn.id === connectionId);
-    
-    if (!targetConnection) {
-      throw new Error('Conexión no encontrada');
-    }
-    
-    // Actualizamos la conexión objetivo para activarla
-    const updatedConnection = {
-      name: targetConnection.name,
-      host: targetConnection.host,
-      port: targetConnection.port,
-      username: targetConnection.username,
-      password: targetConnection.password || '',
-      environment: targetConnection.environment,
-      description: targetConnection.description,
-      active: true
-    };
-    
-    const response = await fetch(`${API_BASE}/${connectionId}`, {
+    // PASO 2: Si la conectividad es exitosa, activar la conexión usando el endpoint específico
+    const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTION_ACTIVATE(connectionId)), {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(updatedConnection),
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Error ${response.status}: ${errorText}`);
-    }
-
-    const result = await response.json();
-    console.log(`✅ Conexión activada exitosamente: ${result.name}`);
-    return result;
     
+    if (!response.ok) {
+      const error = await response.text();
+      throw new Error(`Error activating connection: ${error}`);
+    }
+    
+    const activatedConnection = await response.json();
+    console.log(`✅ Conexión activada exitosamente: ${activatedConnection.name}`);
+    
+    return activatedConnection;
   } catch (error) {
-    console.error('❌ Error activating connection:', error);
+    console.error(`❌ Error en activateConnection:`, error);
     throw error;
   }
 }

@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { BrokerConnection } from '@/types/connection';
+import { activateConnection } from '@/lib/api/connections';
+import { API_CONFIG, buildApiUrl } from '@/lib/config/api';
 
 export function useConnections() {
   const [connections, setConnections] = useState<BrokerConnection[]>([]);
@@ -25,7 +27,7 @@ export function useConnections() {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('http://localhost:8080/api/connections');
+      const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTIONS));
       console.log('fetchConnections: Respuesta recibida', response.status, response.ok);
       
       if (!response.ok) {
@@ -87,7 +89,7 @@ export function useConnections() {
       setConnectionMessage(null);
       
       // Desactivar todas las conexiones en el backend
-      const response = await fetch('http://localhost:8080/api/connections/disconnect', {
+      const response = await fetch(buildApiUrl(API_CONFIG.ENDPOINTS.CONNECTION_DISCONNECT), {
         method: 'PUT'
       });
       

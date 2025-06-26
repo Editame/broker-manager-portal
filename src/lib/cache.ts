@@ -56,6 +56,10 @@ class SimpleCache {
     this.cache.clear();
   }
 
+  delete(key: string): boolean {
+    return this.cache.delete(key);
+  }
+
   // Limpiar entradas expiradas
   cleanup(): void {
     const now = Date.now();

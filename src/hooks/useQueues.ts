@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { QueueInfo } from '@/types/queue';
 import { LoadingState } from '@/types/common';
 import { fetchQueues } from '@/lib/api/service';
+import { API_CONFIG, buildApiUrlWithConnection } from '@/lib/config/api';
 
 export function useQueues(connectionId: string | null, isActive: boolean = false) {
   const [queues, setQueues] = useState<QueueInfo[]>([]);
@@ -27,7 +28,7 @@ export function useQueues(connectionId: string | null, isActive: boolean = false
       setLoadingState({ loading: true, error: null });
       
       // Hacer petición específica a la conexión activa
-      const response = await fetch(`http://localhost:8080/api/queues?connectionId=${connectionId}`);
+      const response = await fetch(buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.QUEUES, connectionId));
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

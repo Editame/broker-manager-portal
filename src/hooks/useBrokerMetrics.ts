@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { API_CONFIG, buildApiUrlWithConnection } from '@/lib/config/api';
 
 export interface BrokerMetrics {
   brokerId: string;
@@ -42,7 +43,7 @@ export function useBrokerMetrics(connectionId: string | null, isActive: boolean 
       setError(null);
       
       // Hacer petición específica a la conexión activa
-      const response = await fetch(`http://localhost:8080/api/broker/metrics?connectionId=${connectionId}`);
+      const response = await fetch(buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.BROKER_METRICS, connectionId));
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }

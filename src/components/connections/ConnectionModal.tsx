@@ -9,8 +9,7 @@ import {
   createConnection, 
   updateConnection,
   deleteConnection, 
-  testConnection, 
-  testConnectionConfig, 
+  testConnection,
   activateConnection 
 } from '@/lib/api/connections';
 import { useConnections } from '@/hooks/useConnections';
@@ -92,13 +91,21 @@ export function ConnectionModal({ isOpen, onClose, onConnectionChange, canClose 
     
     try {
       setTestingForm(true);
-      const result = await testConnectionConfig({
-        host: formData.host,
-        port: formData.port,
-        username: formData.username || undefined,
-        password: formData.password || undefined
-      });
-      setTestResult(result);
+      
+      // Si estamos editando una conexión existente, usar su ID
+      if (editingConnection?.id) {
+        const result = await testConnection(editingConnection.id);
+        setTestResult(result);
+      } else {
+        // Para nuevas conexiones, necesitaríamos una función diferente
+        // Por ahora, mostrar mensaje de que debe guardarse primero
+        setTestResult({
+          status: 'ERROR',
+          success: false,
+          message: 'Debe guardar la conexión antes de probarla',
+          timestamp: new Date().toISOString()
+        });
+      }
     } catch (error) {
       setTestResult({
         status: 'ERROR',

@@ -1,15 +1,15 @@
 import { QueueInfo } from '@/types/queue';
 import { Message } from '@/types/message';
 import { BrokerQueuesResponse } from './types';
-import { ENDPOINTS } from './endpoints';
+import { API_CONFIG, buildApiUrl, buildApiUrlWithConnection } from '@/lib/config/api';
 import { cachedFetch } from '@/lib/cache';
 
-export async function fetchQueues(): Promise<QueueInfo[]> {
+export async function fetchQueues(connectionId: string): Promise<QueueInfo[]> {
     return cachedFetch(
-        'queues',
+        `queues-${connectionId}`,
         async () => {
             try {
-                const res = await fetch(ENDPOINTS.QUEUES);
+                const res = await fetch(buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.QUEUES, connectionId));
                 if (!res.ok) {
                     throw new Error(`HTTP error! status: ${res.status}`);
                 }
@@ -25,18 +25,18 @@ export async function fetchQueues(): Promise<QueueInfo[]> {
     );
 }
 
-export async function fetchMessages(queueName: string): Promise<Message[]> {
-    console.log(`🔄 API: Starting fetchMessages for queue: ${queueName}`);
+export async function fetchMessages(queueName: string, connectionId: string): Promise<Message[]> {
+    console.log(`🔄 API: Starting fetchMessages for queue: ${queueName} on connection: ${connectionId}`);
     const apiStartTime = performance.now();
     
     return cachedFetch(
-        `messages-${queueName}`,
+        `messages-${queueName}-${connectionId}`,
         async () => {
             try {
                 console.log(`🌐 API: Making HTTP request for queue: ${queueName}`);
                 const httpStartTime = performance.now();
                 
-                const url = ENDPOINTS.QUEUE_MESSAGES(queueName);
+                const url = buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.QUEUE_MESSAGES(queueName), connectionId);
                 console.log('📡 API: Request URL:', url);
                 
                 const res = await fetch(url);
@@ -72,13 +72,14 @@ export interface SendMessageRequest {
     type?: string;
     priority?: number;
     timeToLive?: number;
+    persistent?: boolean;
 }
 
-export async function sendMessage(queueName: string, messageData: SendMessageRequest): Promise<string> {
+export async function sendMessage(queueName: string, messageData: SendMessageRequest, connectionId: string): Promise<string> {
     try {
-        console.log('Sending message to queue:', queueName, messageData);
+        console.log('Sending message to queue:', queueName, 'on connection:', connectionId, messageData);
         
-        const res = await fetch(ENDPOINTS.QUEUE_MESSAGES(queueName), {
+        const res = await fetch(buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.QUEUE_MESSAGES(queueName), connectionId), {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -95,8 +96,8 @@ export async function sendMessage(queueName: string, messageData: SendMessageReq
         
         // Invalidar cache de mensajes para esta cola
         const { apiCache } = await import('@/lib/cache');
-        if (apiCache && typeof apiCache.cache?.delete === 'function') {
-          apiCache.cache.delete(`messages-${queueName}`);
+        if (apiCache && typeof apiCache.delete === 'function') {
+          apiCache.delete(`messages-${queueName}-${connectionId}`);
         }
         
         return response;
@@ -106,11 +107,11 @@ export async function sendMessage(queueName: string, messageData: SendMessageReq
     }
 }
 
-export async function deleteMessage(queueName: string, messageId: string): Promise<void> {
+export async function deleteMessage(queueName: string, messageId: string, connectionId: string): Promise<void> {
     try {
-        console.log('Deleting message:', messageId, 'from queue:', queueName);
+        console.log('Deleting message:', messageId, 'from queue:', queueName, 'on connection:', connectionId);
         
-        const res = await fetch(ENDPOINTS.QUEUE_MESSAGE(queueName, messageId), {
+        const res = await fetch(buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.QUEUE_MESSAGE(queueName, messageId), connectionId), {
             method: 'DELETE',
         });
         
@@ -122,8 +123,8 @@ export async function deleteMessage(queueName: string, messageId: string): Promi
         
         // Invalidar cache de mensajes para esta cola
         const { apiCache } = await import('@/lib/cache');
-        if (apiCache && typeof apiCache.cache?.delete === 'function') {
-          apiCache.cache.delete(`messages-${queueName}`);
+        if (apiCache && typeof apiCache.delete === 'function') {
+          apiCache.delete(`messages-${queueName}-${connectionId}`);
         }
         
     } catch (error) {
@@ -131,12 +132,12 @@ export async function deleteMessage(queueName: string, messageId: string): Promi
         throw new Error('No se pudo eliminar el mensaje');
     }
 }
-export async function requeueMessages(sourceQueue: string, targetQueue: string, messageIds: string[], operation: 'copy' | 'cut' = 'copy'): Promise<boolean> {
+export async function requeueMessages(sourceQueue: string, targetQueue: string, messageIds: string[], operation: 'copy' | 'cut' = 'copy', connectionId: string): Promise<boolean> {
     console.log(`🔄 API: ${operation === 'cut' ? 'Moving' : 'Copying'} ${messageIds.length} messages from ${sourceQueue} to ${targetQueue}`);
     
     try {
         // 1. Obtener los mensajes completos de la cola origen
-        const messages = await fetchMessages(sourceQueue);
+        const messages = await fetchMessages(sourceQueue, connectionId);
         const messagesToRequeue = messages.filter(msg => messageIds.includes(msg.id));
         
         if (messagesToRequeue.length === 0) {
@@ -149,12 +150,11 @@ export async function requeueMessages(sourceQueue: string, targetQueue: string, 
         for (const message of messagesToRequeue) {
             await sendMessage(targetQueue, {
                 body: message.body,
-                headers: message.headers || {},
-                properties: message.properties || {},
-                priority: message.priority || 4,
+                headers: {}, // Los mensajes simples no tienen headers
+                priority: 4, // Prioridad por defecto
                 timeToLive: 0,
                 persistent: true
-            });
+            }, connectionId);
         }
         
         console.log(`✅ API: ${messagesToRequeue.length} mensajes enviados a ${targetQueue}`);
@@ -165,7 +165,7 @@ export async function requeueMessages(sourceQueue: string, targetQueue: string, 
             
             for (const messageId of messageIds) {
                 try {
-                    await deleteMessage(sourceQueue, messageId);
+                    await deleteMessage(sourceQueue, messageId, connectionId);
                     console.log(`✅ API: Mensaje ${messageId} eliminado de ${sourceQueue}`);
                 } catch (error) {
                     console.error(`❌ API: Error eliminando mensaje ${messageId} de ${sourceQueue}:`, error);
@@ -182,11 +182,11 @@ export async function requeueMessages(sourceQueue: string, targetQueue: string, 
         throw new Error('No se pudieron reencolar los mensajes');
     }
 }
-export async function purgeQueue(queueName: string): Promise<void> {
+export async function purgeQueue(queueName: string, connectionId: string): Promise<void> {
     try {
-        console.log('Purgando cola:', queueName);
+        console.log('Purgando cola:', queueName, 'on connection:', connectionId);
         
-        const res = await fetch(ENDPOINTS.QUEUE_PURGE(queueName), {
+        const res = await fetch(buildApiUrlWithConnection(API_CONFIG.ENDPOINTS.QUEUE_MESSAGES(queueName), connectionId), {
             method: 'DELETE',
         });
         
@@ -198,9 +198,9 @@ export async function purgeQueue(queueName: string): Promise<void> {
         
         // Invalidar cache de mensajes para esta cola
         const { apiCache } = await import('@/lib/cache');
-        if (apiCache && typeof apiCache.cache?.delete === 'function') {
-          apiCache.cache.delete(`messages-${queueName}`);
-          apiCache.cache.delete('queues'); // También invalidar la caché de colas
+        if (apiCache && typeof apiCache.delete === 'function') {
+          apiCache.delete(`messages-${queueName}-${connectionId}`);
+          apiCache.delete(`queues-${connectionId}`); // También invalidar la caché de colas
         }
         
     } catch (error) {
