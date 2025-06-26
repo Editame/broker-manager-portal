@@ -14,7 +14,10 @@ export function useConnections() {
 
   const fetchConnections = useCallback(async () => {
     // Evitar peticiones duplicadas
-    if (fetchingRef.current) return;
+    if (fetchingRef.current) {
+      console.log('fetchConnections: Petición ya en curso, saltando...');
+      return;
+    }
     
     try {
       console.log('fetchConnections: Iniciando petición...');
@@ -23,31 +26,37 @@ export function useConnections() {
       setError(null);
       
       const response = await fetch('http://localhost:8080/api/connections');
-      console.log('fetchConnections: Respuesta recibida', response.status);
+      console.log('fetchConnections: Respuesta recibida', response.status, response.ok);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
       const data = await response.json();
-      console.log('fetchConnections: Datos recibidos', data);
+      console.log('fetchConnections: Datos recibidos', data.length, 'conexiones');
       setConnections(data);
       
       // Encontrar conexión activa y establecer isUserConnected automáticamente
       const active = data.find((conn: BrokerConnection) => conn.active);
-      console.log('fetchConnections: Conexión activa', active);
+      console.log('fetchConnections: Conexión activa encontrada:', active?.name || 'ninguna');
       setActiveConnection(active || null);
       
       // Si hay conexión activa, el usuario está conectado
       if (active) {
-        console.log('fetchConnections: Usuario conectado automáticamente');
+        console.log('fetchConnections: Estableciendo isUserConnected = true');
         setIsUserConnected(true);
+      } else {
+        console.log('fetchConnections: No hay conexión activa, isUserConnected = false');
+        setIsUserConnected(false);
       }
       
     } catch (err) {
-      console.error('Error fetching connections:', err);
+      console.error('fetchConnections: Error:', err);
       setError('No se pudieron obtener las conexiones');
+      setIsUserConnected(false);
+      setActiveConnection(null);
     } finally {
+      console.log('fetchConnections: Finalizando...');
       setLoading(false);
       fetchingRef.current = false;
     }
@@ -57,63 +66,55 @@ export function useConnections() {
     try {
       setConnectionMessage(null);
       
-      // Activar la conexión en el backend
-      const response = await fetch(`http://localhost:8080/api/connections/${connectionId}/activate`, {
-        method: 'PUT'
-      });
+      // Usar la función de activación corregida
+      await activateConnection(connectionId);
       
-      if (!response.ok) {
-        throw new Error(`Error al activar conexión: ${response.status}`);
-      }
-      
-      const activatedConnection = await response.json();
-      
-      // Actualizar estados - SOLO cuando el usuario se conecta manualmente
-      setActiveConnection(activatedConnection);
-      setIsUserConnected(true);
-      setConnectionMessage(`✅ Conectado exitosamente a "${activatedConnection.name}"`);
-      
-      // Refrescar lista de conexiones
+      // Refrescar la lista de conexiones para obtener el estado actualizado
       await fetchConnections();
       
-      return activatedConnection;
+      setConnectionMessage('Conexión establecida exitosamente');
+      console.log(`✅ Conectado exitosamente a la conexión: ${connectionId}`);
     } catch (err) {
       console.error('Error connecting to broker:', err);
-      const errorMsg = err instanceof Error ? err.message : 'Error desconocido al conectar';
-      setError(errorMsg);
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setConnectionMessage(`Error al conectar: ${errorMessage}`);
       throw err;
     }
   }, [fetchConnections]);
 
-  const disconnect = useCallback(() => {
-    setIsUserConnected(false);
-    setConnectionMessage('🔌 Desconectado del broker');
-    
-    // Limpiar mensaje después de 3 segundos
-    setTimeout(() => setConnectionMessage(null), 3000);
-  }, []);
+  const disconnect = useCallback(async () => {
+    try {
+      setConnectionMessage(null);
+      
+      // Desactivar todas las conexiones en el backend
+      const response = await fetch('http://localhost:8080/api/connections/disconnect', {
+        method: 'PUT'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Actualizar estado local
+      setActiveConnection(null);
+      setIsUserConnected(false);
+      
+      // Refrescar la lista de conexiones
+      await fetchConnections();
+      
+      setConnectionMessage('Desconectado exitosamente');
+    } catch (err) {
+      console.error('Error disconnecting:', err);
+      setConnectionMessage('Error al desconectar');
+    }
+  }, [fetchConnections]);
 
   const clearConnectionMessage = useCallback(() => {
     setConnectionMessage(null);
   }, []);
 
-  const fetchActiveConnection = useCallback(async () => {
-    try {
-      const response = await fetch('http://localhost:8080/api/connections/active');
-      if (response.ok) {
-        const data = await response.json();
-        setActiveConnection(data);
-      } else {
-        setActiveConnection(null);
-      }
-    } catch (err) {
-      console.error('Error fetching active connection:', err);
-      setActiveConnection(null);
-    }
-  }, []);
-
+  // Cargar conexiones al montar el componente
   useEffect(() => {
-    console.log('useConnections: Cargando conexiones...');
     fetchConnections();
   }, [fetchConnections]);
 
@@ -124,9 +125,9 @@ export function useConnections() {
     loading,
     error,
     connectionMessage,
-    refetch: fetchConnections,
     connectToConnection,
     disconnect,
-    clearConnectionMessage
+    clearConnectionMessage,
+    refetch: fetchConnections
   };
 }

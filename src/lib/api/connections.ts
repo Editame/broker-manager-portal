@@ -110,15 +110,57 @@ export async function testConnectionConfig(request: TestConnectionRequest): Prom
   return response.json();
 }
 
-export async function activateConnection(id: string): Promise<BrokerConnection> {
-  const response = await fetch(`${API_BASE}/${id}/activate`, {
-    method: 'PUT',
-  });
-  
-  if (!response.ok) {
-    const error = await response.text();
-    throw new Error(`Error activating connection: ${error}`);
+export async function activateConnection(connectionId: string): Promise<BrokerConnection> {
+  try {
+    // PASO 1: Probar la conectividad ANTES de activar
+    console.log(`🔍 Probando conectividad de la conexión: ${connectionId}`);
+    const testResult = await testConnection(connectionId);
+    
+    if (testResult.lastTestStatus !== 'CONNECTED') {
+      throw new Error(`Conexión fallida: ${testResult.lastTestMessage || 'No se pudo conectar al broker'}`);
+    }
+    
+    console.log(`✅ Conectividad confirmada, procediendo a activar...`);
+    
+    // PASO 2: Si la conectividad es exitosa, activar la conexión
+    const allConnections = await getAllConnections();
+    const targetConnection = allConnections.find(conn => conn.id === connectionId);
+    
+    if (!targetConnection) {
+      throw new Error('Conexión no encontrada');
+    }
+    
+    // Actualizamos la conexión objetivo para activarla
+    const updatedConnection = {
+      name: targetConnection.name,
+      host: targetConnection.host,
+      port: targetConnection.port,
+      username: targetConnection.username,
+      password: targetConnection.password || '',
+      environment: targetConnection.environment,
+      description: targetConnection.description,
+      active: true
+    };
+    
+    const response = await fetch(`${API_BASE}/${connectionId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(updatedConnection),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Error ${response.status}: ${errorText}`);
+    }
+
+    const result = await response.json();
+    console.log(`✅ Conexión activada exitosamente: ${result.name}`);
+    return result;
+    
+  } catch (error) {
+    console.error('❌ Error activating connection:', error);
+    throw error;
   }
-  
-  return response.json();
 }
